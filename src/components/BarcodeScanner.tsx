@@ -48,42 +48,74 @@ function ScannerModal({
   onScan: (code: string) => void;
 }) {
   const [error, setError] = useState<string | null>(null);
-  const scannedRef = useRef(false);
+
+  // Keep callbacks in refs so the camera effect never re-runs.
+  const onScanRef = useRef(onScan);
+  onScanRef.current = onScan;
 
   useEffect(() => {
-    let scanner: { stop: () => Promise<void>; clear: () => void } | null = null;
-    let cancelled = false;
+    let disposed = false;
+    let scanned = false;
+    // The lifecycle promise chain: every stop waits for start to settle,
+    // which survives React Strict Mode's mount → unmount → mount in dev.
+    let session: Promise<{ stop: () => Promise<void> } | null> = Promise.resolve(null);
 
-    (async () => {
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.mediaDevices?.getUserMedia
+    ) {
+      setError(
+        "No camera available in this browser. You can type the code by hand."
+      );
+      return;
+    }
+
+    session = (async () => {
+      const { Html5Qrcode } = await import("html5-qrcode");
+      if (disposed) return null;
+      const el = document.getElementById("falfoul-scanner");
+      if (!el) return null;
+      const scanner = new Html5Qrcode("falfoul-scanner", { verbose: false });
       try {
-        const { Html5Qrcode } = await import("html5-qrcode");
-        if (cancelled) return;
-        const s = new Html5Qrcode("falfoul-scanner");
-        scanner = s;
-        await s.start(
+        await scanner.start(
           { facingMode: "environment" },
           { fps: 10, qrbox: { width: 240, height: 140 } },
           (text) => {
-            if (scannedRef.current) return;
-            scannedRef.current = true;
-            s.stop().catch(() => {});
-            onScan(text.trim());
+            if (scanned || disposed) return;
+            scanned = true;
+            onScanRef.current(text.trim());
           },
           () => {} // per-frame decode misses — ignore
         );
       } catch (e) {
-        setError(
-          "Camera unavailable — allow camera access, or type the code by hand. " +
-            String(e instanceof Error ? e.message : e)
-        );
+        if (!disposed) {
+          setError(
+            "Camera unavailable — allow camera access in your browser, or type the code by hand."
+          );
+          console.warn("barcode scanner:", e);
+        }
+        return null;
       }
+      if (disposed) {
+        // Unmounted while the camera was warming up — shut it down.
+        await scanner.stop().catch(() => {});
+        return null;
+      }
+      return scanner;
     })();
 
     return () => {
-      cancelled = true;
-      scanner?.stop().catch(() => {});
+      disposed = true;
+      session
+        .then((scanner) => scanner?.stop())
+        .catch(() => {})
+        .then(() => {
+          // html5-qrcode leaves its UI in the container — clear it.
+          const el = document.getElementById("falfoul-scanner");
+          if (el) el.innerHTML = "";
+        });
     };
-  }, [onScan]);
+  }, []);
 
   return (
     <div
@@ -99,15 +131,18 @@ function ScannerModal({
           <span className="mac-title">Scan barcode</span>
         </div>
         <div className="p-4">
+          <div
+            id="falfoul-scanner"
+            className={`overflow-hidden border-2 border-gray-900 ${
+              error ? "hidden" : ""
+            }`}
+          />
           {error ? (
             <p className="text-sm text-red-600">{error}</p>
           ) : (
-            <>
-              <div id="falfoul-scanner" className="overflow-hidden border-2 border-gray-900" />
-              <p className="pixel mt-2 text-center text-xs text-gray-500">
-                Point the camera at the barcode…
-              </p>
-            </>
+            <p className="pixel mt-2 text-center text-xs text-gray-500">
+              Point the camera at the barcode…
+            </p>
           )}
           <div className="mt-3 flex justify-end">
             <button type="button" className="btn btn-ghost" onClick={onClose}>
