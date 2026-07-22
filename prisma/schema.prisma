@@ -30,6 +30,23 @@ model Supplier {
   phone    String?
   note     String?
   products Product[]
+  invoices Invoice[]
+}
+
+// A facture from a fournisseur: number, date, place, total paid and a
+// photo. Holds many product items; the app tracks how much of the
+// total has been entered so far.
+model Invoice {
+  id          Int       @id @default(autoincrement())
+  supplierId  Int
+  supplier    Supplier  @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  number      String // facture number or name
+  date        DateTime  @default(now())
+  place       String?
+  totalAmount Float     @default(0) // total written on the facture
+  imageUrl    String?
+  createdAt   DateTime  @default(now())
+  products    Product[]
 }
 
 model Product {
@@ -43,6 +60,8 @@ model Product {
   // Purchase / invoice details
   supplierId Int?
   supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  invoiceId  Int?
+  invoice    Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
   purchaseDate    DateTime  @default(now())
   packs           Int       @default(1) // how many packs bought
   unitsPerPack    Int       @default(1) // pieces per pack

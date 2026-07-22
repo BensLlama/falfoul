@@ -179,6 +179,55 @@ export async function deleteSupplier(formData: FormData) {
   revalidatePath("/products");
 }
 
+/* ------------------------------ Invoices ------------------------------- */
+
+export async function createInvoice(formData: FormData) {
+  const supplierId = int(formData.get("supplierId"));
+  const number = str(formData.get("number"));
+  if (!supplierId || !number) return;
+
+  const imageUrl = await saveUpload(formData.get("image") as File | null);
+
+  await prisma.invoice.create({
+    data: {
+      supplierId,
+      number,
+      date: dateOrNull(formData.get("date")) ?? new Date(),
+      place: str(formData.get("place")) || null,
+      totalAmount: num(formData.get("totalAmount")),
+      imageUrl,
+    },
+  });
+
+  revalidatePath("/invoices");
+  revalidatePath("/suppliers");
+}
+
+export async function updateInvoice(formData: FormData) {
+  const id = int(formData.get("id"));
+  if (!id) return;
+  const newImage = await saveUpload(formData.get("image") as File | null);
+  const data = {
+    number: str(formData.get("number")),
+    date: dateOrNull(formData.get("date")) ?? new Date(),
+    place: str(formData.get("place")) || null,
+    totalAmount: num(formData.get("totalAmount")),
+  };
+  await prisma.invoice.update({
+    where: { id },
+    data: newImage ? { ...data, imageUrl: newImage } : data,
+  });
+  revalidatePath("/invoices");
+}
+
+export async function deleteInvoice(formData: FormData) {
+  const id = int(formData.get("id"));
+  // Items stay as products — they just lose the facture link.
+  if (id) await prisma.invoice.delete({ where: { id } });
+  revalidatePath("/invoices");
+  revalidatePath("/products");
+}
+
 /* -------- Build the shared product+purchase data from a form ----------- */
 
 async function buildProductData(formData: FormData) {
@@ -203,12 +252,15 @@ async function buildProductData(formData: FormData) {
     str(formData.get("newSupplier"))
   );
 
+  const invoiceIdRaw = int(formData.get("invoiceId"));
+
   return {
     name: str(formData.get("name")),
     variant: str(formData.get("variant")) || null,
     barcode: str(formData.get("barcode")) || null,
     categoryId,
     supplierId,
+    invoiceId: invoiceIdRaw > 0 ? invoiceIdRaw : null,
     purchaseDate: dateOrNull(formData.get("purchaseDate")) ?? new Date(),
     packs,
     unitsPerPack,

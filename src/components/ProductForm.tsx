@@ -9,6 +9,14 @@ import { translator, type Lang } from "@/lib/i18n";
 
 type Category = { id: number; name: string; parentId: number | null };
 type SupplierOpt = { id: number; name: string };
+export type InvoiceOpt = {
+  id: number;
+  supplierId: number;
+  number: string;
+  dateStr: string; // yyyy-mm-dd
+  totalAmount: number;
+  enteredSum: number; // sum of items already on the facture
+};
 type ProductData = {
   id: number;
   name: string;
@@ -16,6 +24,7 @@ type ProductData = {
   barcode: string | null;
   categoryId: number | null;
   supplierId: number | null;
+  invoiceId: number | null;
   purchaseDate: string; // yyyy-mm-dd
   packs: number;
   unitsPerPack: number;
@@ -166,15 +175,20 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 export default function ProductForm({
   categories,
   suppliers,
+  invoices = [],
   product,
   copyFrom,
+  initialInvoiceId,
   lang,
 }: {
   categories: Category[];
   suppliers: SupplierOpt[];
+  invoices?: InvoiceOpt[];
   product?: ProductData;
   /** Pre-fill from an existing product (variant duplication). */
   copyFrom?: ProductData;
+  /** Pre-select a facture (e.g. arriving from the Invoices page). */
+  initialInvoiceId?: number | null;
   lang?: Lang;
 }) {
   const tr = translator(lang ?? "en");
@@ -184,27 +198,65 @@ export default function ProductForm({
 
   const [packs, setPacks] = useState(base?.packs ?? 1);
   const [unitsPerPack, setUnitsPerPack] = useState(base?.unitsPerPack ?? 1);
-  const [purchasePrice, setPurchasePrice] = useState(base?.purchasePrice ?? 0);
-  // The fournisseur quotes a price per pack — total is computed from it.
-  const [packPrice, setPackPrice] = useState(
-    base && base.packs > 0 ? round2(base.purchasePrice / base.packs) : 0
+
+  // Prices and margin are kept as STRINGS so the fields can start empty
+  // and the user can freely delete digits — no sticky leading zero.
+  const [purchasePriceStr, setPurchasePriceStr] = useState(
+    base && base.purchasePrice ? String(base.purchasePrice) : ""
   );
+  const [packPriceStr, setPackPriceStr] = useState(
+    base && base.packs > 0 && base.purchasePrice
+      ? String(round2(base.purchasePrice / base.packs))
+      : ""
+  );
+  const [marginStr, setMarginStr] = useState(
+    base ? String(base.marginPercent) : "20"
+  );
+  const purchasePrice = parseFloat(purchasePriceStr) || 0;
+  const packPrice = parseFloat(packPriceStr) || 0;
+  const margin = parseFloat(marginStr) || 0;
+
   const [barcode, setBarcode] = useState(base?.barcode ?? "");
-  const [margin, setMargin] = useState(base?.marginPercent ?? 20);
   const [preview, setPreview] = useState<string | null>(null);
+
+  // Supplier → facture cascade, with automatic date fill.
+  const presetInvoiceId = product?.invoiceId ?? initialInvoiceId ?? null;
+  const presetInvoice = invoices.find((i) => i.id === presetInvoiceId);
+  const [supplierSel, setSupplierSel] = useState<string>(
+    String(base?.supplierId ?? presetInvoice?.supplierId ?? "")
+  );
+  const [invoiceSel, setInvoiceSel] = useState<string>(
+    presetInvoiceId ? String(presetInvoiceId) : ""
+  );
+  const [purchaseDate, setPurchaseDate] = useState(
+    product?.purchaseDate || presetInvoice?.dateStr || today
+  );
 
   const changePacks = (v: number) => {
     setPacks(v);
-    if (packPrice > 0) setPurchasePrice(round2(v * packPrice));
+    if (packPrice > 0) setPurchasePriceStr(String(round2(v * packPrice)));
   };
-  const changePackPrice = (v: number) => {
-    setPackPrice(v);
-    setPurchasePrice(round2(packs * v));
+  const changePackPrice = (s: string) => {
+    setPackPriceStr(s);
+    const n = parseFloat(s);
+    setPurchasePriceStr(isNaN(n) ? "" : String(round2(packs * n)));
   };
-  const changeTotal = (v: number) => {
-    setPurchasePrice(v);
-    setPackPrice(packs > 0 ? round2(v / packs) : 0);
+  const changeTotal = (s: string) => {
+    setPurchasePriceStr(s);
+    const n = parseFloat(s);
+    setPackPriceStr(isNaN(n) || packs <= 0 ? "" : String(round2(n / packs)));
   };
+
+  // The intelligent part: how much of the facture total is still
+  // missing, live, counting what's being typed right now.
+  const selInv = invoices.find((i) => String(i.id) === invoiceSel);
+  let remaining: number | null = null;
+  if (selInv && selInv.totalAmount > 0) {
+    const alreadyEntered =
+      selInv.enteredSum -
+      (isEdit && product?.invoiceId === selInv.id ? product.purchasePrice : 0);
+    remaining = round2(selInv.totalAmount - alreadyEntered - purchasePrice);
+  }
 
   const pricing = useMemo(
     () =>
@@ -282,7 +334,14 @@ export default function ProductForm({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label>{tr("form.supplier")}</label>
-                  <select name="supplierId" defaultValue={base?.supplierId ?? ""}>
+                  <select
+                    name="supplierId"
+                    value={supplierSel}
+                    onChange={(e) => {
+                      setSupplierSel(e.target.value);
+                      setInvoiceSel("");
+                    }}
+                  >
                     <option value="">{tr("form.choose")}</option>
                     {suppliers.map((s) => (
                       <option key={s.id} value={s.id}>
@@ -296,12 +355,45 @@ export default function ProductForm({
                   <input name="newSupplier" placeholder="e.g. Metro" />
                 </div>
               </div>
+              {supplierSel && (
+                <div>
+                  <label className="flex items-center justify-between">
+                    <span>{tr("form.facture")}</span>
+                    <Link
+                      href="/invoices"
+                      className="text-xs font-medium text-emerald-600 hover:underline"
+                    >
+                      {tr("form.newFactureLink")}
+                    </Link>
+                  </label>
+                  <select
+                    name="invoiceId"
+                    value={invoiceSel}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setInvoiceSel(v);
+                      const inv = invoices.find((i) => String(i.id) === v);
+                      if (inv) setPurchaseDate(inv.dateStr);
+                    }}
+                  >
+                    <option value="">{tr("form.noFacture")}</option>
+                    {invoices
+                      .filter((i) => String(i.supplierId) === supplierSel)
+                      .map((i) => (
+                        <option key={i.id} value={i.id}>
+                          {i.number} · {i.dateStr}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
               <div>
                 <label>{tr("form.purchaseDate")}</label>
                 <input
                   name="purchaseDate"
                   type="date"
-                  defaultValue={product?.purchaseDate ?? today}
+                  value={purchaseDate}
+                  onChange={(e) => setPurchaseDate(e.target.value)}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -328,8 +420,8 @@ export default function ProductForm({
                     type="number"
                     step="0.01"
                     min={0}
-                    value={packPrice}
-                    onChange={(e) => changePackPrice(Number(e.target.value))}
+                    value={packPriceStr}
+                    onChange={(e) => changePackPrice(e.target.value)}
                     placeholder="0.00"
                   />
                 </div>
@@ -340,8 +432,8 @@ export default function ProductForm({
                     type="number"
                     step="0.01"
                     min={0}
-                    value={purchasePrice}
-                    onChange={(e) => changeTotal(Number(e.target.value))}
+                    value={purchasePriceStr}
+                    onChange={(e) => changeTotal(e.target.value)}
                     placeholder="0.00"
                   />
                 </div>
@@ -352,13 +444,30 @@ export default function ProductForm({
                   name="marginPercent"
                   type="number"
                   step="0.1"
-                  value={margin}
-                  onChange={(e) => setMargin(Number(e.target.value))}
+                  value={marginStr}
+                  onChange={(e) => setMarginStr(e.target.value)}
                 />
               </div>
               <div className="mac-invert px-3 py-1.5 text-center text-sm">
                 {tr("form.sellAt")} <b>{money(pricing.sellPricePerUnit)}</b>
               </div>
+              {remaining !== null && (
+                <div
+                  className={`border-2 px-3 py-2 text-center text-sm font-semibold ${
+                    remaining < -0.01
+                      ? "border-red-500 text-red-600"
+                      : remaining < 0.01
+                      ? "border-emerald-600 text-emerald-700"
+                      : "border-amber-500 text-amber-700"
+                  }`}
+                >
+                  {remaining < -0.01
+                    ? tr("form.factureOver")
+                    : remaining < 0.01
+                    ? tr("inv.complete")
+                    : `${money(remaining)} ${tr("form.factureRemaining")}`}
+                </div>
+              )}
             </fieldset>
 
             {/* ----------------------- 3 · Extras ------------------------ */}

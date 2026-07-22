@@ -12,6 +12,7 @@ const links: { href: string; key: TKey; icon: PixelIconName }[] = [
   { href: "/products", key: "nav.products", icon: "box" },
   { href: "/categories", key: "nav.categories", icon: "tag" },
   { href: "/suppliers", key: "nav.suppliers", icon: "truck" },
+  { href: "/invoices", key: "nav.invoices", icon: "doc" },
   { href: "/sales", key: "nav.sales", icon: "coin" },
   { href: "/analytics", key: "nav.analytics", icon: "chart" },
   { href: "/alerts", key: "nav.alerts", icon: "bell" },
@@ -33,7 +34,7 @@ function Clock() {
     return () => clearInterval(t);
   }, []);
   return (
-    <span suppressHydrationWarning className="pixel px-2 text-sm text-gray-900">
+    <span suppressHydrationWarning className="pixel px-2 text-base text-gray-900">
       {time || "--:--"}
     </span>
   );
@@ -53,7 +54,7 @@ export default function MenuBar({ lang = "en" }: { lang?: Lang }) {
 
   return (
     <header className="no-print sticky top-0 z-50 border-b-2 border-gray-900 bg-white">
-      <div className="flex h-9 items-center gap-0.5 overflow-x-auto px-2">
+      <div className="flex h-12 items-center gap-0.5 overflow-x-auto px-2">
         {/* the "apple menu" — a six-color pepper, of course */}
         <button
           type="button"
@@ -61,7 +62,7 @@ export default function MenuBar({ lang = "en" }: { lang?: Lang }) {
           onClick={() => setAbout(true)}
           className="flex h-full shrink-0 items-center px-2.5 hover:bg-gray-900"
         >
-          <PixelIcon name="pepper" size={18} rainbow />
+          <PixelIcon name="pepper" size={24} rainbow />
         </button>
 
         {about && (
@@ -113,13 +114,13 @@ export default function MenuBar({ lang = "en" }: { lang?: Lang }) {
               key={l.href}
               href={l.href}
               title={label}
-              className={`pixel flex h-full shrink-0 items-center gap-1.5 whitespace-nowrap px-3.5 text-sm sm:px-3 ${
+              className={`pixel flex h-full shrink-0 items-center gap-1.5 whitespace-nowrap px-4 text-base sm:px-3.5 ${
                 active
                   ? "bg-gray-900 text-white"
                   : "text-gray-900 hover:bg-gray-900 hover:text-white"
               }`}
             >
-              <PixelIcon name={l.icon} size={15} />
+              <PixelIcon name={l.icon} size={20} />
               <span className="hidden md:inline">{label}</span>
             </Link>
           );
@@ -130,7 +131,7 @@ export default function MenuBar({ lang = "en" }: { lang?: Lang }) {
             type="button"
             onClick={toggleLang}
             title={lang === "fr" ? "Switch to English" : "Passer en français"}
-            className="pixel px-2 text-sm text-gray-900 hover:bg-gray-900 hover:text-white"
+            className="pixel px-3 text-base text-gray-900 hover:bg-gray-900 hover:text-white"
           >
             {lang === "fr" ? "EN" : "FR"}
           </button>

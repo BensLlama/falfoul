@@ -194,6 +194,31 @@ const dict = {
   "cat.new": ["New category", "Nouvelle catégorie"],
   "cat.sub": ["sub", "sous"],
   "cat.subCategories": ["sub-categories", "sous-catégories"],
+
+  // invoices (factures)
+  "nav.invoices": ["Invoices", "Factures"],
+  "inv.title": ["Invoices", "Factures"],
+  "inv.subtitle": ["Each facture from a fournisseur: its number, date, total — and how much is still not entered.", "Chaque facture d'un fournisseur : numéro, date, total — et ce qu'il reste à saisir."],
+  "inv.add": ["➕ Add a facture", "➕ Ajouter une facture"],
+  "inv.number": ["Facture number / name", "Numéro / nom de la facture"],
+  "inv.date": ["Date", "Date"],
+  "inv.place": ["Place (optional)", "Lieu (optionnel)"],
+  "inv.total": ["Total paid (DH)", "Total payé (DH)"],
+  "inv.photo": ["Photo of the facture", "Photo de la facture"],
+  "inv.addBtn": ["Add facture", "Ajouter la facture"],
+  "inv.none": ["No factures yet — add the first one with the form.", "Pas encore de factures — ajoutez la première avec le formulaire."],
+  "inv.entered": ["entered", "saisi"],
+  "inv.remaining": ["still to enter", "reste à saisir"],
+  "inv.complete": ["✓ Fully entered", "✓ Entièrement saisie"],
+  "inv.over": ["over the total!", "au-dessus du total !"],
+  "inv.items": ["items", "articles"],
+  "inv.addItem": ["+ Add item", "+ Ajouter article"],
+  "inv.deleteMsg": ["Delete this facture? Its items stay as products.", "Supprimer cette facture ? Ses articles restent comme produits."],
+  "form.facture": ["Facture (optional)", "Facture (optionnel)"],
+  "form.noFacture": ["— No facture —", "— Sans facture —"],
+  "form.factureRemaining": ["left to enter on this facture", "à saisir sur cette facture"],
+  "form.factureOver": ["This facture is over its total!", "Cette facture dépasse son total !"],
+  "form.newFactureLink": ["+ New facture", "+ Nouvelle facture"],
 } as const;
 
 export type TKey = keyof typeof dict;

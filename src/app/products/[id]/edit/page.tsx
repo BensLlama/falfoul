@@ -17,10 +17,14 @@ export default async function EditProductPage({
   const lang = await getLang();
   const { id } = await params;
   const productId = parseInt(id, 10);
-  const [product, categories, suppliers] = await Promise.all([
+  const [product, categories, suppliers, invoices] = await Promise.all([
     prisma.product.findUnique({ where: { id: productId } }),
     prisma.category.findMany({ orderBy: { name: "asc" } }),
     prisma.supplier.findMany({ orderBy: { name: "asc" } }),
+    prisma.invoice.findMany({
+      include: { products: { select: { purchasePrice: true } } },
+      orderBy: { date: "desc" },
+    }),
   ]);
 
   if (!product) notFound();
@@ -31,6 +35,14 @@ export default async function EditProductPage({
         lang={lang}
         categories={categories}
         suppliers={suppliers}
+        invoices={invoices.map((i) => ({
+          id: i.id,
+          supplierId: i.supplierId,
+          number: i.number,
+          dateStr: new Date(i.date).toISOString().slice(0, 10),
+          totalAmount: i.totalAmount,
+          enteredSum: i.products.reduce((s, p) => s + p.purchasePrice, 0),
+        }))}
         product={{
           id: product.id,
           name: product.name,
@@ -38,6 +50,7 @@ export default async function EditProductPage({
           barcode: product.barcode,
           categoryId: product.categoryId,
           supplierId: product.supplierId,
+          invoiceId: product.invoiceId,
           purchaseDate: toInputDate(product.purchaseDate) ?? "",
           packs: product.packs,
           unitsPerPack: product.unitsPerPack,

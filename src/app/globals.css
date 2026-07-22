@@ -55,7 +55,7 @@ summary,
 input,
 select,
 textarea {
-  @apply w-full rounded-none border-2 bg-white px-3 py-2 text-sm outline-none;
+  @apply w-full rounded-none border-2 bg-white px-3.5 py-2.5 text-base outline-none;
   border-color: var(--ink);
 }
 input:focus,
@@ -65,14 +65,14 @@ textarea:focus {
 }
 
 label {
-  @apply mb-1 block text-sm font-medium;
+  @apply mb-1.5 block text-base font-medium;
   color: var(--ink);
 }
 
 /* Classic Mac buttons: rounded-rect outline; primary gets the
    double "default button" ring; pressing inverts to black. */
 .btn {
-  @apply inline-flex cursor-pointer items-center justify-center gap-2 px-5 py-2 text-sm;
+  @apply inline-flex cursor-pointer items-center justify-center gap-2.5 px-6 py-2.5 text-base;
   font-family: var(--font-pixel), "Chicago", sans-serif;
   border: 2px solid var(--ink);
   border-radius: 10px;
@@ -110,7 +110,7 @@ label {
 }
 
 .badge {
-  @apply inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium;
+  @apply inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium;
   border-color: currentColor;
   font-family: var(--font-pixel), "Chicago", sans-serif;
 }

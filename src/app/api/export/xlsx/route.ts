@@ -6,7 +6,7 @@ import { formatDate } from "@/lib/calc";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const [products, sales, categories, suppliers] = await Promise.all([
+  const [products, sales, categories, suppliers, invoices] = await Promise.all([
     getProductsWithStock(),
     prisma.sale.findMany({
       include: { product: true },
@@ -19,6 +19,13 @@ export async function GET() {
     prisma.supplier.findMany({
       include: { _count: { select: { products: true } } },
       orderBy: { name: "asc" },
+    }),
+    prisma.invoice.findMany({
+      include: {
+        supplier: true,
+        products: { select: { purchasePrice: true } },
+      },
+      orderBy: { date: "desc" },
     }),
   ]);
 
@@ -139,6 +146,32 @@ export async function GET() {
       phone: s.phone ?? "",
       note: s.note ?? "",
       products: s._count.products,
+    });
+  }
+
+  const wsInv = wb.addWorksheet("Invoices");
+  wsInv.columns = [
+    { header: "Facture", key: "number", width: 20 },
+    { header: "Supplier", key: "supplier", width: 24 },
+    { header: "Date", key: "date", width: 14 },
+    { header: "Place", key: "place", width: 18 },
+    { header: "Total", key: "total", width: 12 },
+    { header: "Entered", key: "entered", width: 12 },
+    { header: "Remaining", key: "remaining", width: 12 },
+    { header: "Items", key: "items", width: 8 },
+  ];
+  header(wsInv);
+  for (const inv of invoices) {
+    const entered = inv.products.reduce((s, p) => s + p.purchasePrice, 0);
+    wsInv.addRow({
+      number: inv.number,
+      supplier: inv.supplier.name,
+      date: formatDate(inv.date),
+      place: inv.place ?? "",
+      total: Number(inv.totalAmount.toFixed(2)),
+      entered: Number(entered.toFixed(2)),
+      remaining: Number((inv.totalAmount - entered).toFixed(2)),
+      items: inv.products.length,
     });
   }
 
