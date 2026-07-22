@@ -25,8 +25,14 @@ const sql = execSync(
 
 const statements = sql
   .split(";")
-  .map((s) => s.trim())
-  .filter((s) => s && !s.startsWith("--"));
+  .map((s) =>
+    s
+      .split("\n")
+      .filter((line) => !line.trim().startsWith("--"))
+      .join("\n")
+      .trim()
+  )
+  .filter(Boolean);
 
 const db = createClient({ url, authToken });
 
