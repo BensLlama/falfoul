@@ -6,11 +6,19 @@ import { formatDate } from "@/lib/calc";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const [products, sales] = await Promise.all([
+  const [products, sales, categories, suppliers] = await Promise.all([
     getProductsWithStock(),
     prisma.sale.findMany({
       include: { product: true },
       orderBy: { saleDate: "desc" },
+    }),
+    prisma.category.findMany({
+      include: { parent: true, _count: { select: { products: true } } },
+      orderBy: { name: "asc" },
+    }),
+    prisma.supplier.findMany({
+      include: { _count: { select: { products: true } } },
+      orderBy: { name: "asc" },
     }),
   ]);
 
@@ -21,6 +29,8 @@ export async function GET() {
 
   ws.columns = [
     { header: "Product", key: "name", width: 28 },
+    { header: "Variant", key: "variant", width: 14 },
+    { header: "Barcode", key: "barcode", width: 16 },
     { header: "Category", key: "category", width: 16 },
     { header: "Supplier", key: "supplier", width: 18 },
     { header: "Purchase date", key: "purchaseDate", width: 14 },
@@ -47,6 +57,8 @@ export async function GET() {
   for (const p of products) {
     ws.addRow({
       name: p.name,
+      variant: p.variant ?? "",
+      barcode: p.barcode ?? "",
       category: p.category,
       supplier: p.supplier ?? "",
       purchaseDate: formatDate(p.purchaseDate),
@@ -86,6 +98,47 @@ export async function GET() {
       quantity: s.quantity,
       unitPrice: Number(s.unitPrice.toFixed(2)),
       total: Number(s.total.toFixed(2)),
+    });
+  }
+
+  const header = (w: import("exceljs").Worksheet) => {
+    w.getRow(1).font = { bold: true };
+    w.getRow(1).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFD1FAE5" },
+    };
+  };
+
+  const wsCat = wb.addWorksheet("Categories");
+  wsCat.columns = [
+    { header: "Category", key: "name", width: 28 },
+    { header: "Parent", key: "parent", width: 28 },
+    { header: "Products", key: "products", width: 10 },
+  ];
+  header(wsCat);
+  for (const c of categories) {
+    wsCat.addRow({
+      name: c.name,
+      parent: c.parent?.name ?? "",
+      products: c._count.products,
+    });
+  }
+
+  const wsSup = wb.addWorksheet("Suppliers");
+  wsSup.columns = [
+    { header: "Supplier", key: "name", width: 28 },
+    { header: "Phone", key: "phone", width: 18 },
+    { header: "Note", key: "note", width: 30 },
+    { header: "Products", key: "products", width: 10 },
+  ];
+  header(wsSup);
+  for (const s of suppliers) {
+    wsSup.addRow({
+      name: s.name,
+      phone: s.phone ?? "",
+      note: s.note ?? "",
+      products: s._count.products,
     });
   }
 

@@ -33,6 +33,12 @@ async function main() {
     { name: "Baguette", cat: "Bakery", unitsPerPack: 10, threshold: 20, packs: 10, price: 100, margin: 50, expiresInDays: 1, sold: 88 },
   ];
 
+  const metro = await prisma.supplier.upsert({
+    where: { name: "Metro Wholesale" },
+    update: {},
+    create: { name: "Metro Wholesale" },
+  });
+
   for (const s of seed) {
     const pricing = computePricing({
       packs: s.packs,
@@ -45,7 +51,7 @@ async function main() {
       data: {
         name: s.name,
         categoryId: cats[s.cat],
-        supplier: "Metro Wholesale",
+        supplierId: metro.id,
         purchaseDate: daysFromNow(-20),
         packs: s.packs,
         unitsPerPack: s.unitsPerPack,

@@ -1,15 +1,19 @@
 import { prisma } from "@/lib/db";
+import { getLang } from "@/lib/getLang";
+import { t } from "@/lib/i18n";
 import {
   createCategory,
   updateCategory,
   deleteCategory,
 } from "@/app/actions";
 import { PageHeader } from "@/components/ui";
+import { PixelIcon } from "@/components/PixelIcon";
 import CategoryManager from "@/components/CategoryManager";
 
 export const dynamic = "force-dynamic";
 
 export default async function CategoriesPage() {
+  const lang = await getLang();
   const categories = await prisma.category.findMany({
     include: { _count: { select: { products: true } } },
     orderBy: { name: "asc" },
@@ -18,8 +22,13 @@ export default async function CategoriesPage() {
   return (
     <div>
       <PageHeader
-        title="Categories"
-        subtitle="Each card is a main category. Open a group to see what's inside — add, rename or delete anywhere."
+        title={t(lang, "categories.title")}
+        subtitle={t(lang, "categories.subtitle")}
+        action={
+          <a href="/api/export/xlsx" className="btn btn-ghost">
+            <PixelIcon name="disk" /> Excel
+          </a>
+        }
       />
       <CategoryManager
         cats={categories.map((c) => ({

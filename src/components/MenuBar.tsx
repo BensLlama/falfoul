@@ -3,16 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-// (About dialog uses local state below)
+import { useRouter } from "next/navigation";
 import { PixelIcon, PixelIconName } from "@/components/PixelIcon";
+import { translator, type Lang, type TKey } from "@/lib/i18n";
 
-const links: { href: string; label: string; icon: PixelIconName }[] = [
-  { href: "/", label: "Dashboard", icon: "home" },
-  { href: "/products", label: "Products", icon: "box" },
-  { href: "/categories", label: "Categories", icon: "tag" },
-  { href: "/sales", label: "Sales", icon: "coin" },
-  { href: "/analytics", label: "Analytics", icon: "chart" },
-  { href: "/alerts", label: "Alerts", icon: "bell" },
+const links: { href: string; key: TKey; icon: PixelIconName }[] = [
+  { href: "/", key: "nav.dashboard", icon: "home" },
+  { href: "/products", key: "nav.products", icon: "box" },
+  { href: "/categories", key: "nav.categories", icon: "tag" },
+  { href: "/suppliers", key: "nav.suppliers", icon: "truck" },
+  { href: "/sales", key: "nav.sales", icon: "coin" },
+  { href: "/analytics", key: "nav.analytics", icon: "chart" },
+  { href: "/alerts", key: "nav.alerts", icon: "bell" },
 ];
 
 /** The classic Mac menu-bar clock. */
@@ -37,9 +39,17 @@ function Clock() {
   );
 }
 
-export default function MenuBar() {
+export default function MenuBar({ lang = "en" }: { lang?: Lang }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [about, setAbout] = useState(false);
+  const tr = translator(lang);
+
+  const toggleLang = () => {
+    const next = lang === "fr" ? "en" : "fr";
+    document.cookie = `lang=${next};path=/;max-age=31536000`;
+    router.refresh();
+  };
 
   return (
     <header className="no-print sticky top-0 z-50 border-b-2 border-gray-900 bg-white">
@@ -97,11 +107,12 @@ export default function MenuBar() {
         {links.map((l) => {
           const active =
             l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
+          const label = tr(l.key);
           return (
             <Link
               key={l.href}
               href={l.href}
-              title={l.label}
+              title={label}
               className={`pixel flex h-full shrink-0 items-center gap-1.5 whitespace-nowrap px-3.5 text-sm sm:px-3 ${
                 active
                   ? "bg-gray-900 text-white"
@@ -109,12 +120,20 @@ export default function MenuBar() {
               }`}
             >
               <PixelIcon name={l.icon} size={15} />
-              <span className="hidden md:inline">{l.label}</span>
+              <span className="hidden md:inline">{label}</span>
             </Link>
           );
         })}
 
         <div className="ml-auto flex shrink-0 items-center">
+          <button
+            type="button"
+            onClick={toggleLang}
+            title={lang === "fr" ? "Switch to English" : "Passer en français"}
+            className="pixel px-2 text-sm text-gray-900 hover:bg-gray-900 hover:text-white"
+          >
+            {lang === "fr" ? "EN" : "FR"}
+          </button>
           <span className="pixel hidden px-2 text-sm text-gray-400 sm:inline">
             Falfoul
           </span>

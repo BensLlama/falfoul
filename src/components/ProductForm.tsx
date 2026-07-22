@@ -4,13 +4,18 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { createProduct, updateProduct } from "@/app/actions";
 import { computePricing, money } from "@/lib/calc";
+import BarcodeScanner from "@/components/BarcodeScanner";
+import { translator, type Lang } from "@/lib/i18n";
 
 type Category = { id: number; name: string; parentId: number | null };
+type SupplierOpt = { id: number; name: string };
 type ProductData = {
   id: number;
   name: string;
+  variant: string | null;
+  barcode: string | null;
   categoryId: number | null;
-  supplier: string | null;
+  supplierId: number | null;
   purchaseDate: string; // yyyy-mm-dd
   packs: number;
   unitsPerPack: number;
@@ -156,23 +161,50 @@ function MacWindow({
   );
 }
 
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
 export default function ProductForm({
   categories,
+  suppliers,
   product,
+  copyFrom,
+  lang,
 }: {
   categories: Category[];
+  suppliers: SupplierOpt[];
   product?: ProductData;
+  /** Pre-fill from an existing product (variant duplication). */
+  copyFrom?: ProductData;
+  lang?: Lang;
 }) {
+  const tr = translator(lang ?? "en");
   const isEdit = !!product;
+  const base = product ?? copyFrom;
   const today = new Date().toISOString().slice(0, 10);
 
-  const [packs, setPacks] = useState(product?.packs ?? 1);
-  const [unitsPerPack, setUnitsPerPack] = useState(product?.unitsPerPack ?? 1);
-  const [purchasePrice, setPurchasePrice] = useState(
-    product?.purchasePrice ?? 0
+  const [packs, setPacks] = useState(base?.packs ?? 1);
+  const [unitsPerPack, setUnitsPerPack] = useState(base?.unitsPerPack ?? 1);
+  const [purchasePrice, setPurchasePrice] = useState(base?.purchasePrice ?? 0);
+  // The fournisseur quotes a price per pack — total is computed from it.
+  const [packPrice, setPackPrice] = useState(
+    base && base.packs > 0 ? round2(base.purchasePrice / base.packs) : 0
   );
-  const [margin, setMargin] = useState(product?.marginPercent ?? 20);
+  const [barcode, setBarcode] = useState(base?.barcode ?? "");
+  const [margin, setMargin] = useState(base?.marginPercent ?? 20);
   const [preview, setPreview] = useState<string | null>(null);
+
+  const changePacks = (v: number) => {
+    setPacks(v);
+    if (packPrice > 0) setPurchasePrice(round2(v * packPrice));
+  };
+  const changePackPrice = (v: number) => {
+    setPackPrice(v);
+    setPurchasePrice(round2(packs * v));
+  };
+  const changeTotal = (v: number) => {
+    setPurchasePrice(v);
+    setPackPrice(packs > 0 ? round2(v / packs) : 0);
+  };
 
   const pricing = useMemo(
     () =>
@@ -193,50 +225,79 @@ export default function ProductForm({
         {isEdit && <input type="hidden" name="id" value={product!.id} />}
 
         <MacWindow
-          title={isEdit ? `Edit \u201c${product!.name}\u201d` : "New Product"}
+          title={isEdit ? `Edit \u201c${product!.name}\u201d` : tr("form.newProduct")}
           closeHref="/products"
         >
           {/* One screen, three panels — no scrolling to save. */}
           <div className="grid grid-cols-1 items-start gap-4 p-4 md:grid-cols-2 xl:grid-cols-3">
             {/* ----------------------- 1 · Product ----------------------- */}
             <fieldset className="mac-fieldset space-y-3">
-              <legend className="mac-legend">1 · THE PRODUCT</legend>
+              <legend className="mac-legend">{tr("form.theProduct")}</legend>
               <div>
-                <label>Name</label>
+                <label>{tr("form.name")}</label>
                 <input
                   name="name"
                   autoFocus
                   required
-                  defaultValue={product?.name}
+                  defaultValue={base?.name}
                   placeholder="e.g. Sidi Ali water 1.5L"
                 />
               </div>
               <div>
-                <label>Category</label>
+                <label>{tr("form.variant")}</label>
+                <input
+                  name="variant"
+                  defaultValue={product?.variant ?? ""}
+                  placeholder={tr("form.variantPh")}
+                />
+              </div>
+              <div>
+                <label>{tr("form.barcode")}</label>
+                <div className="flex gap-2">
+                  <input
+                    name="barcode"
+                    value={barcode}
+                    onChange={(e) => setBarcode(e.target.value)}
+                    placeholder={tr("form.barcodePh")}
+                  />
+                  <BarcodeScanner onScan={setBarcode} />
+                </div>
+              </div>
+              <div>
+                <label>{tr("form.category")}</label>
                 <CategoryPicker
                   categories={categories}
-                  initialId={product?.categoryId ?? null}
+                  initialId={base?.categoryId ?? null}
                 />
               </div>
               <div>
-                <label>…or type a new category</label>
+                <label>{tr("form.newCategory")}</label>
                 <input name="newCategory" placeholder="e.g. Drinks" />
-              </div>
-              <div>
-                <label>Supplier (fournisseur)</label>
-                <input
-                  name="supplier"
-                  defaultValue={product?.supplier ?? ""}
-                  placeholder="e.g. Marjane / Metro"
-                />
               </div>
             </fieldset>
 
             {/* ----------------------- 2 · Purchase ---------------------- */}
             <fieldset className="mac-fieldset space-y-3">
-              <legend className="mac-legend">2 · WHAT YOU BOUGHT</legend>
+              <legend className="mac-legend">{tr("form.whatYouBought")}</legend>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label>{tr("form.supplier")}</label>
+                  <select name="supplierId" defaultValue={base?.supplierId ?? ""}>
+                    <option value="">{tr("form.choose")}</option>
+                    {suppliers.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label>{tr("form.newSupplier")}</label>
+                  <input name="newSupplier" placeholder="e.g. Metro" />
+                </div>
+              </div>
               <div>
-                <label>Purchase date</label>
+                <label>{tr("form.purchaseDate")}</label>
                 <input
                   name="purchaseDate"
                   type="date"
@@ -245,11 +306,11 @@ export default function ProductForm({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label>Packs</label>
-                  <Stepper name="packs" value={packs} onChange={setPacks} />
+                  <label>{tr("form.packs")}</label>
+                  <Stepper name="packs" value={packs} onChange={changePacks} />
                 </div>
                 <div>
-                  <label>Pieces / pack</label>
+                  <label>{tr("form.piecesPerPack")}</label>
                   <Stepper
                     name="unitsPerPack"
                     value={unitsPerPack}
@@ -258,22 +319,35 @@ export default function ProductForm({
                 </div>
               </div>
               <div className="border-2 border-dashed border-gray-900 px-3 py-1.5 text-center text-sm">
-                = <b>{pricing.totalUnits}</b> pieces in total
+                = <b>{pricing.totalUnits}</b> {tr("form.piecesTotal")}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label>{tr("form.pricePerPack")}</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    value={packPrice}
+                    onChange={(e) => changePackPrice(Number(e.target.value))}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label>{tr("form.totalPaid")}</label>
+                  <input
+                    name="purchasePrice"
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    value={purchasePrice}
+                    onChange={(e) => changeTotal(Number(e.target.value))}
+                    placeholder="0.00"
+                  />
+                </div>
               </div>
               <div>
-                <label>Total price you paid</label>
-                <input
-                  name="purchasePrice"
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  value={purchasePrice}
-                  onChange={(e) => setPurchasePrice(Number(e.target.value))}
-                  placeholder="0.00"
-                />
-              </div>
-              <div>
-                <label>Your margin %</label>
+                <label>{tr("form.margin")}</label>
                 <input
                   name="marginPercent"
                   type="number"
@@ -283,16 +357,16 @@ export default function ProductForm({
                 />
               </div>
               <div className="mac-invert px-3 py-1.5 text-center text-sm">
-                sell 1 piece at <b>{money(pricing.sellPricePerUnit)}</b>
+                {tr("form.sellAt")} <b>{money(pricing.sellPricePerUnit)}</b>
               </div>
             </fieldset>
 
             {/* ----------------------- 3 · Extras ------------------------ */}
             <fieldset className="mac-fieldset space-y-3 md:col-span-2 xl:col-span-1">
-              <legend className="mac-legend">3 · EXTRAS (OPTIONAL)</legend>
+              <legend className="mac-legend">{tr("form.extras")}</legend>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label>Expiration date</label>
+                  <label>{tr("form.expiration")}</label>
                   <input
                     name="expirationDate"
                     type="date"
@@ -300,18 +374,18 @@ export default function ProductForm({
                   />
                 </div>
                 <div>
-                  <label>Low-stock alert (pcs)</label>
+                  <label>{tr("form.lowStock")}</label>
                   <input
                     name="lowStockThreshold"
                     type="number"
                     min={0}
-                    defaultValue={product?.lowStockThreshold ?? 10}
+                    defaultValue={base?.lowStockThreshold ?? 10}
                   />
                 </div>
               </div>
               <div>
                 <label>
-                  Invoice photo {isEdit ? "(empty = keep current)" : ""}
+                  {tr("form.invoice")} {isEdit ? tr("form.keepCurrent") : ""}
                 </label>
                 <input
                   name="invoice"
@@ -324,12 +398,12 @@ export default function ProductForm({
                 />
               </div>
               <div>
-                <label>Note</label>
+                <label>{tr("form.note")}</label>
                 <textarea
                   name="note"
                   rows={2}
                   defaultValue={product?.note ?? ""}
-                  placeholder="Anything to remember…"
+                  placeholder={tr("form.notePh")}
                 />
               </div>
               {(preview || product?.invoiceImageUrl) && (
@@ -347,27 +421,27 @@ export default function ProductForm({
           <div className="flex flex-wrap items-center justify-between gap-3 border-t-2 border-gray-900 px-4 py-3">
             <div className="pixel flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
               <span>
-                Pieces: <b>{pricing.totalUnits}</b>
+                {tr("form.pieces")}: <b>{pricing.totalUnits}</b>
               </span>
               <span>
-                Cost/pc: <b>{money(pricing.costPerUnit)}</b>
+                {tr("form.costPc")}: <b>{money(pricing.costPerUnit)}</b>
               </span>
               <span>
-                Sell/pc: <b>{money(pricing.sellPricePerUnit)}</b>
+                {tr("form.sellPc")}: <b>{money(pricing.sellPricePerUnit)}</b>
               </span>
               <span>
-                Profit/pc: <b>{money(pricing.profitPerUnit)}</b>
+                {tr("form.profitPc")}: <b>{money(pricing.profitPerUnit)}</b>
               </span>
               <span className="mac-invert px-2 py-0.5">
-                Total profit: <b>{money(pricing.expectedProfit)}</b>
+                {tr("form.totalProfit")}: <b>{money(pricing.expectedProfit)}</b>
               </span>
             </div>
             <div className="flex items-center gap-5">
               <Link href="/products" className="btn btn-ghost">
-                Cancel
+                {tr("common.cancel")}
               </Link>
               <button type="submit" className="btn btn-primary">
-                Save
+                {tr("common.save")}
               </button>
             </div>
           </div>

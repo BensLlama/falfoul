@@ -7,7 +7,7 @@ import { daysUntil } from "./calc";
  */
 export async function getProductsWithStock() {
   const products = await prisma.product.findMany({
-    include: { category: true, sales: true },
+    include: { category: true, supplier: true, sales: true },
     orderBy: { createdAt: "desc" },
   });
 
@@ -19,9 +19,12 @@ export async function getProductsWithStock() {
     return {
       id: p.id,
       name: p.name,
+      variant: p.variant,
+      barcode: p.barcode,
       category: p.category?.name ?? "Uncategorized",
       categoryId: p.categoryId,
-      supplier: p.supplier,
+      supplier: p.supplier?.name ?? null,
+      supplierId: p.supplierId,
       purchaseDate: p.purchaseDate,
       packs: p.packs,
       unitsPerPack: p.unitsPerPack,
@@ -48,7 +51,7 @@ export async function getProductsWithStock() {
 export async function getExpiryAlerts(withinDays = 30) {
   const products = await prisma.product.findMany({
     where: { expirationDate: { not: null } },
-    include: { category: true },
+    include: { category: true, supplier: true },
     orderBy: { expirationDate: "asc" },
   });
 
@@ -57,7 +60,7 @@ export async function getExpiryAlerts(withinDays = 30) {
       id: p.id,
       productName: p.name,
       category: p.category?.name ?? "Uncategorized",
-      supplier: p.supplier,
+      supplier: p.supplier?.name ?? null,
       totalUnits: p.totalUnits,
       expirationDate: p.expirationDate,
       days: daysUntil(p.expirationDate),

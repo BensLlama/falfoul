@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { getProductsWithStock } from "@/lib/queries";
+import { getLang } from "@/lib/getLang";
+import { t } from "@/lib/i18n";
 import { money, formatDate, daysUntil } from "@/lib/calc";
 import { deleteProduct } from "@/app/actions";
 import { PageHeader, EmptyState } from "@/components/ui";
@@ -16,6 +18,7 @@ function expiryTone(days: number | null): ProductRow["expiryTone"] {
 }
 
 export default async function ProductsPage() {
+  const lang = await getLang();
   const products = await getProductsWithStock();
 
   const rows: ProductRow[] = products.map((p) => {
@@ -23,6 +26,8 @@ export default async function ProductsPage() {
     return {
       id: p.id,
       name: p.name,
+      variant: p.variant,
+      barcode: p.barcode,
       category: p.category,
       supplier: p.supplier,
       purchaseDateStr: formatDate(p.purchaseDate),
@@ -45,8 +50,8 @@ export default async function ProductsPage() {
   return (
     <div>
       <PageHeader
-        title="Products"
-        subtitle="Everything you bought — product details, invoice, stock and prices in one place."
+        title={t(lang, "products.title")}
+        subtitle={t(lang, "products.subtitle")}
         action={
           <div className="flex flex-wrap gap-2">
             {products.length > 0 && (
@@ -65,7 +70,7 @@ export default async function ProductsPage() {
               </>
             )}
             <Link href="/products/new" className="btn btn-primary">
-              + Save product
+              {t(lang, "products.new")}
             </Link>
           </div>
         }

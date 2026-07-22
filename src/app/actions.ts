@@ -117,6 +117,68 @@ export async function deleteCategory(formData: FormData) {
   revalidatePath("/products");
 }
 
+/* ------------------------------ Suppliers ------------------------------ */
+
+async function resolveSupplierId(
+  supplierId: string,
+  newSupplier: string
+): Promise<number | null> {
+  const name = newSupplier.trim();
+  if (name) {
+    const existing = await prisma.supplier.findUnique({ where: { name } });
+    if (existing) return existing.id;
+    const created = await prisma.supplier.create({ data: { name } });
+    return created.id;
+  }
+  const id = parseInt(supplierId, 10);
+  return isNaN(id) ? null : id;
+}
+
+export async function createSupplier(formData: FormData) {
+  const name = str(formData.get("name"));
+  if (!name) return;
+  const existing = await prisma.supplier.findUnique({ where: { name } });
+  if (!existing) {
+    await prisma.supplier.create({
+      data: {
+        name,
+        phone: str(formData.get("phone")) || null,
+        note: str(formData.get("note")) || null,
+      },
+    });
+  }
+  revalidatePath("/suppliers");
+  revalidatePath("/products");
+}
+
+export async function updateSupplier(formData: FormData) {
+  const id = int(formData.get("id"));
+  const name = str(formData.get("name"));
+  if (!id || !name) return;
+  const clash = await prisma.supplier.findFirst({
+    where: { name, NOT: { id } },
+  });
+  if (clash) return;
+  await prisma.supplier.update({
+    where: { id },
+    data: {
+      name,
+      phone: str(formData.get("phone")) || null,
+      note: str(formData.get("note")) || null,
+    },
+  });
+  revalidatePath("/suppliers");
+  revalidatePath("/products");
+}
+
+export async function deleteSupplier(formData: FormData) {
+  const id = int(formData.get("id"));
+  // Products keep existing but lose the link (ON DELETE SET NULL).
+  if (id) await prisma.supplier.delete({ where: { id } });
+  revalidatePath("/suppliers");
+  revalidatePath("/products");
+}
+
 /* -------- Build the shared product+purchase data from a form ----------- */
 
 async function buildProductData(formData: FormData) {
@@ -136,11 +198,17 @@ async function buildProductData(formData: FormData) {
     str(formData.get("categoryId")),
     str(formData.get("newCategory"))
   );
+  const supplierId = await resolveSupplierId(
+    str(formData.get("supplierId")),
+    str(formData.get("newSupplier"))
+  );
 
   return {
     name: str(formData.get("name")),
+    variant: str(formData.get("variant")) || null,
+    barcode: str(formData.get("barcode")) || null,
     categoryId,
-    supplier: str(formData.get("supplier")) || null,
+    supplierId,
     purchaseDate: dateOrNull(formData.get("purchaseDate")) ?? new Date(),
     packs,
     unitsPerPack,

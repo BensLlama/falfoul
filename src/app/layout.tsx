@@ -3,6 +3,7 @@ import { Pixelify_Sans } from "next/font/google";
 import "./globals.css";
 import MenuBar from "@/components/MenuBar";
 import BootSplash from "@/components/BootSplash";
+import { getLang } from "@/lib/getLang";
 
 const pixel = Pixelify_Sans({
   subsets: ["latin"],
@@ -29,17 +30,18 @@ export const viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const lang = await getLang();
   return (
-    <html lang="en">
+    <html lang={lang}>
       <body className={`${pixel.variable} antialiased`}>
         <div className="flex min-h-screen flex-col">
           <BootSplash />
-          <MenuBar />
+          <MenuBar lang={lang} />
           <main className="flex-1 overflow-x-hidden p-4 md:p-7">
             <div className="mx-auto max-w-6xl">{children}</div>
           </main>

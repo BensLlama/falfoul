@@ -23,14 +23,26 @@ model Category {
 
 // A Product is one item you bought from a supplier invoice.
 // Catalog details and purchase/invoice details are stored together.
+// A fournisseur you buy from — managed on its own page, selected in forms.
+model Supplier {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  phone    String?
+  note     String?
+  products Product[]
+}
+
 model Product {
   id         Int       @id @default(autoincrement())
   name       String
+  variant    String? // version of the same product: "Lemon", "Chocolate", …
+  barcode    String? // EAN / UPC / Codabar — scanned or typed
   categoryId Int?
   category   Category? @relation(fields: [categoryId], references: [id])
 
   // Purchase / invoice details
-  supplier        String? // fournisseur
+  supplierId Int?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   purchaseDate    DateTime  @default(now())
   packs           Int       @default(1) // how many packs bought
   unitsPerPack    Int       @default(1) // pieces per pack

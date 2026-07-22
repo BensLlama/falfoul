@@ -5,10 +5,13 @@ import { useState } from "react";
 import { Badge } from "@/components/ui";
 import DeleteForm from "@/components/DeleteForm";
 import { PixelIcon } from "@/components/PixelIcon";
+import BarcodeScanner from "@/components/BarcodeScanner";
 
 export type ProductRow = {
   id: number;
   name: string;
+  variant: string | null;
+  barcode: string | null;
   category: string;
   supplier: string | null;
   purchaseDateStr: string;
@@ -38,26 +41,29 @@ export default function ProductTable({
   const q = query.trim().toLowerCase();
   const visible = q
     ? rows.filter((p) =>
-        [p.name, p.category, p.supplier ?? ""].some((s) =>
-          s.toLowerCase().includes(q)
+        [p.name, p.variant ?? "", p.barcode ?? "", p.category, p.supplier ?? ""].some(
+          (s) => s.toLowerCase().includes(q)
         )
       )
     : rows;
 
   return (
     <div>
-      <div className="relative mb-4 max-w-sm">
-        <PixelIcon
-          name="search"
-          size={15}
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-        />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search name, category or supplier…"
-          className="!pl-9"
-        />
+      <div className="mb-4 flex max-w-md items-center gap-2">
+        <div className="relative flex-1">
+          <PixelIcon
+            name="search"
+            size={15}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search name, variant, barcode, supplier…"
+            className="!pl-9"
+          />
+        </div>
+        <BarcodeScanner onScan={setQuery} label="" />
       </div>
 
       {/* --- Phone: stacked cards --- */}
@@ -73,10 +79,16 @@ export default function ProductTable({
               <div className="min-w-0">
                 <div className="truncate font-semibold text-gray-900">
                   {p.name}
+                  {p.variant && (
+                    <span className="ml-1.5 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-normal text-blue-700">
+                      {p.variant}
+                    </span>
+                  )}
                 </div>
                 <div className="text-xs text-gray-400">
                   {p.category}
                   {p.supplier ? ` · ${p.supplier}` : ""}
+                  {p.barcode ? ` · ${p.barcode}` : ""}
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-1.5">
@@ -107,6 +119,12 @@ export default function ProductTable({
                 <span className="text-xs text-gray-300">no expiry</span>
               )}
               <div className="flex items-center gap-3 text-sm">
+                <Link
+                  href={`/products/new?copy=${p.id}`}
+                  className="text-blue-600 hover:underline"
+                >
+                  Duplicate
+                </Link>
                 <Link
                   href={`/products/${p.id}/edit`}
                   className="text-emerald-600 hover:underline"
@@ -171,9 +189,17 @@ export default function ProductTable({
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <div className="font-medium text-gray-900">{p.name}</div>
+                  <div className="font-medium text-gray-900">
+                    {p.name}
+                    {p.variant && (
+                      <span className="ml-1.5 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-normal text-blue-700">
+                        {p.variant}
+                      </span>
+                    )}
+                  </div>
                   <div className="text-xs text-gray-400">
                     {p.category} · {p.purchaseDateStr}
+                    {p.barcode && <span className="ml-1 font-mono">· {p.barcode}</span>}
                   </div>
                 </td>
                 <td className="px-4 py-3 text-gray-600">{p.supplier || "—"}</td>
@@ -212,6 +238,13 @@ export default function ProductTable({
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+                    <Link
+                      href={`/products/new?copy=${p.id}`}
+                      className="text-blue-600 hover:underline"
+                      title="Create a new version of this product"
+                    >
+                      Duplicate
+                    </Link>
                     <Link
                       href={`/products/${p.id}/edit`}
                       className="text-emerald-600 hover:underline"

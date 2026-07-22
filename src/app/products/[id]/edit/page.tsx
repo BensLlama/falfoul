@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { getLang } from "@/lib/getLang";
 import ProductForm from "@/components/ProductForm";
 
 export const dynamic = "force-dynamic";
@@ -13,11 +14,13 @@ export default async function EditProductPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const lang = await getLang();
   const { id } = await params;
   const productId = parseInt(id, 10);
-  const [product, categories] = await Promise.all([
+  const [product, categories, suppliers] = await Promise.all([
     prisma.product.findUnique({ where: { id: productId } }),
     prisma.category.findMany({ orderBy: { name: "asc" } }),
+    prisma.supplier.findMany({ orderBy: { name: "asc" } }),
   ]);
 
   if (!product) notFound();
@@ -25,12 +28,16 @@ export default async function EditProductPage({
   return (
     <div>
       <ProductForm
+        lang={lang}
         categories={categories}
+        suppliers={suppliers}
         product={{
           id: product.id,
           name: product.name,
+          variant: product.variant,
+          barcode: product.barcode,
           categoryId: product.categoryId,
-          supplier: product.supplier,
+          supplierId: product.supplierId,
           purchaseDate: toInputDate(product.purchaseDate) ?? "",
           packs: product.packs,
           unitsPerPack: product.unitsPerPack,
