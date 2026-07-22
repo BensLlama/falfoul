@@ -10,7 +10,8 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "setup": "prisma generate && prisma db push && tsx prisma/seed.ts",
-    "turso:push": "node scripts/turso-push.mjs"
+    "turso:push": "node scripts/turso-push.mjs",
+    "turso:seed": "node scripts/turso-seed-categories.mjs"
   },
   "dependencies": {
     "@libsql/client": "^0.17.4",
