@@ -15,11 +15,12 @@ function makeClient() {
 
   // In the cloud (Vercel + Turso): connect over libSQL.
   // Locally: plain SQLite file via DATABASE_URL, as always.
-  const tursoUrl = process.env.TURSO_DATABASE_URL;
+  // (trim() guards against stray whitespace pasted into env vars)
+  const tursoUrl = process.env.TURSO_DATABASE_URL?.trim();
   if (tursoUrl) {
     const adapter = new PrismaLibSQL({
       url: tursoUrl,
-      authToken: process.env.TURSO_AUTH_TOKEN,
+      authToken: process.env.TURSO_AUTH_TOKEN?.trim(),
     });
     return new PrismaClient({ adapter, log: [...log] });
   }
