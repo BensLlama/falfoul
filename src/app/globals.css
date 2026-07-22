@@ -1,0 +1,242 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ */
+/* Falfoul — classic Macintosh (Susan Kare, System 6) theme            */
+/* ------------------------------------------------------------------ */
+
+:root {
+  --ink: #111827;
+}
+
+/* The classic dithered desktop — with the 90s Mac teal tint */
+html,
+body {
+  background-color: #d7e4e2;
+  background-image: repeating-conic-gradient(#8fb4ae 0% 25%, #d7e4e2 0% 50%);
+  background-size: 4px 4px;
+  color: var(--ink);
+}
+
+/* Period-correct scrollbars: square, bordered, lavender thumb */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #b9aee4 #f3f4f6;
+}
+*::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+*::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border: 2px solid var(--ink);
+}
+*::-webkit-scrollbar-thumb {
+  background: #b9aee4;
+  border: 2px solid var(--ink);
+}
+
+/* Pixel font for everything that "speaks" — headings, nav, buttons */
+h1,
+h2,
+h3,
+label,
+th,
+summary,
+.pixel {
+  font-family: var(--font-pixel), "Chicago", "Geneva", sans-serif;
+}
+
+/* Sharp monochrome form controls */
+input,
+select,
+textarea {
+  @apply w-full rounded-none border-2 bg-white px-3 py-2 text-sm outline-none;
+  border-color: var(--ink);
+}
+input:focus,
+select:focus,
+textarea:focus {
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+label {
+  @apply mb-1 block text-sm font-medium;
+  color: var(--ink);
+}
+
+/* Classic Mac buttons: rounded-rect outline; primary gets the
+   double "default button" ring; pressing inverts to black. */
+.btn {
+  @apply inline-flex cursor-pointer items-center justify-center gap-2 px-5 py-2 text-sm;
+  font-family: var(--font-pixel), "Chicago", sans-serif;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+}
+.btn:hover {
+  background: #f3f4f6;
+}
+.btn:active {
+  background: var(--ink);
+  color: #fff;
+}
+.btn-primary {
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--ink);
+  margin: 5px; /* room for the double ring */
+}
+.btn-ghost {
+  /* plain outline button */
+}
+.btn-danger {
+  color: #b91c1c;
+  border-color: #b91c1c;
+}
+.btn-danger:active {
+  background: #b91c1c;
+  color: #fff;
+}
+
+/* Cards look like little Mac windows */
+.card {
+  @apply rounded-none border-2 bg-white p-5;
+  border-color: var(--ink);
+  box-shadow: 4px 4px 0 rgba(17, 24, 39, 0.85);
+}
+
+.badge {
+  @apply inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium;
+  border-color: currentColor;
+  font-family: var(--font-pixel), "Chicago", sans-serif;
+}
+
+/* ------------------------------------------------------------------ */
+/* Extra classic-Mac building blocks (used by forms)                   */
+/* ------------------------------------------------------------------ */
+
+.mac {
+  font-family: var(--font-pixel), "Chicago", "Geneva", sans-serif;
+}
+
+.mac-window {
+  background: #fff;
+  border: 2px solid var(--ink);
+  box-shadow: 4px 4px 0 rgba(17, 24, 39, 0.85);
+}
+
+/* Title bar with the classic horizontal pinstripes */
+.mac-titlebar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 10px;
+  border-bottom: 2px solid var(--ink);
+  background: #fff;
+}
+.mac-titlebar::before {
+  content: "";
+  position: absolute;
+  inset: 6px 8px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--ink) 0 1.5px,
+    transparent 1.5px 4.5px
+  );
+}
+.mac-title {
+  position: relative;
+  margin: 0 auto;
+  padding: 0 10px;
+  background: #fff;
+  font-family: var(--font-pixel), "Chicago", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.mac-close {
+  position: relative;
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  border: 2px solid var(--ink);
+  background: #fff;
+  box-shadow: 0 0 0 5px #fff;
+  cursor: pointer;
+}
+.mac-close:hover {
+  background: var(--ink);
+}
+
+/* Group boxes */
+.mac-fieldset {
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  padding: 12px 12px 14px;
+}
+.mac-legend {
+  font-family: var(--font-pixel), "Chicago", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 0 8px;
+  color: var(--ink);
+}
+
+/* Small square stepper buttons  [-] [+]  */
+.mac-step {
+  width: 34px;
+  flex-shrink: 0;
+  border: 2px solid var(--ink);
+  background: #fff;
+  color: var(--ink);
+  font-family: var(--font-pixel), "Chicago", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+}
+.mac-step:active {
+  background: var(--ink);
+  color: #fff;
+}
+
+/* Inverted highlight (like selected text on a classic Mac) */
+.mac-invert {
+  background: var(--ink);
+  color: #fff;
+}
+
+/* Legacy alias kept for the product form wrapper */
+.mac-desktop {
+  background: transparent;
+}
+
+/* Boot splash progress bar */
+@keyframes boot {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+.boot-progress {
+  animation: boot 1.4s steps(12, end) forwards;
+}
+
+/* Print: show only the print area, hide app chrome */
+@media print {
+  aside,
+  .no-print {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+  body {
+    background: #fff !important;
+  }
+}

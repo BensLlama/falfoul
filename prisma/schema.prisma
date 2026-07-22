@@ -1,0 +1,61 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id       Int        @id @default(autoincrement())
+  name     String
+  parentId Int?
+  parent   Category?  @relation("SubCategories", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("SubCategories")
+  products Product[]
+
+  // The same name may exist under different parents (e.g. "Sponges"
+  // under both "Dishwashing" and "Cleaning Tools").
+  @@unique([name, parentId])
+}
+
+// A Product is one item you bought from a supplier invoice.
+// Catalog details and purchase/invoice details are stored together.
+model Product {
+  id         Int       @id @default(autoincrement())
+  name       String
+  categoryId Int?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  // Purchase / invoice details
+  supplier        String? // fournisseur
+  purchaseDate    DateTime  @default(now())
+  packs           Int       @default(1) // how many packs bought
+  unitsPerPack    Int       @default(1) // pieces per pack
+  totalUnits      Int // packs * unitsPerPack — total pieces bought
+  purchasePrice   Float // total price paid
+  marginPercent   Float     @default(0) // desired selling margin %
+  costPerUnit     Float // computed: purchasePrice / totalUnits
+  sellPricePerUnit Float // computed: costPerUnit * (1 + margin/100)
+  expirationDate  DateTime?
+  invoiceImageUrl String?
+  note            String?
+
+  // Stock
+  lowStockThreshold Int @default(10) // notify when remaining pieces <= this
+
+  createdAt DateTime @default(now())
+  sales     Sale[]
+}
+
+model Sale {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int // pieces sold
+  unitPrice Float // price per piece at sale time
+  total     Float // quantity * unitPrice
+  saleDate  DateTime @default(now())
+}
