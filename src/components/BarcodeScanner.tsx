@@ -71,15 +71,49 @@ function ScannerModal({
     }
 
     session = (async () => {
-      const { Html5Qrcode } = await import("html5-qrcode");
+      const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import(
+        "html5-qrcode"
+      );
       if (disposed) return null;
       const el = document.getElementById("falfoul-scanner");
       if (!el) return null;
-      const scanner = new Html5Qrcode("falfoul-scanner", { verbose: false });
+      const scanner = new Html5Qrcode("falfoul-scanner", {
+        verbose: false,
+        // Every retail barcode format, not just QR codes.
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.CODE_93,
+          Html5QrcodeSupportedFormats.CODABAR,
+          Html5QrcodeSupportedFormats.ITF,
+          Html5QrcodeSupportedFormats.QR_CODE,
+        ],
+        // Use the phone's native barcode engine when available —
+        // dramatically better at 1D barcodes than the JS fallback.
+        experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+      });
       try {
         await scanner.start(
           { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 240, height: 140 } },
+          {
+            fps: 15,
+            // Wide box shaped like a product barcode.
+            qrbox: (w, h) => ({
+              width: Math.min(340, Math.floor(w * 0.9)),
+              height: Math.min(140, Math.floor(h * 0.5)),
+            }),
+            // Sharper feed = readable bars.
+            videoConstraints: {
+              facingMode: "environment",
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+            },
+          },
           (text) => {
             if (scanned || disposed) return;
             scanned = true;
@@ -141,7 +175,7 @@ function ScannerModal({
             <p className="text-sm text-red-600">{error}</p>
           ) : (
             <p className="pixel mt-2 text-center text-xs text-gray-500">
-              Point the camera at the barcode…
+              Hold the barcode inside the box, 10–15 cm away, in good light…
             </p>
           )}
           <div className="mt-3 flex justify-end">
