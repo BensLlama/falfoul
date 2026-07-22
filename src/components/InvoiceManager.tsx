@@ -6,6 +6,8 @@ import { MacAlert } from "@/components/MacDialog";
 import { PixelIcon } from "@/components/PixelIcon";
 import { useLang } from "@/lib/useLang";
 import { translator } from "@/lib/i18n";
+import { SubmitWithProgress } from "@/components/FormPending";
+import { compressInputFile } from "@/lib/compressImage";
 
 export type InvoiceRow = {
   id: number;
@@ -41,11 +43,19 @@ export default function InvoiceManager({
 }) {
   const tr = translator(useLang());
   const today = new Date().toISOString().slice(0, 10);
+  const formRef = useRef<HTMLFormElement>(null);
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[340px_1fr]">
       {/* --- Add form --- */}
-      <form action={create} className="card h-fit space-y-4">
+      <form
+        ref={formRef}
+        action={async (fd) => {
+          await create(fd);
+          formRef.current?.reset();
+        }}
+        className="card h-fit space-y-4"
+      >
         <div className="pixel text-base font-semibold text-gray-700">
           {tr("inv.add")}
         </div>
@@ -73,10 +83,9 @@ export default function InvoiceManager({
             <label>{tr("inv.total")}</label>
             <input
               name="totalAmount"
-              type="number"
-              step="0.01"
-              min={0}
-              placeholder="0.00"
+              type="text"
+              inputMode="decimal"
+              placeholder="0,00"
             />
           </div>
         </div>
@@ -86,11 +95,18 @@ export default function InvoiceManager({
         </div>
         <div>
           <label>{tr("inv.photo")}</label>
-          <input name="image" type="file" accept="image/*" capture="environment" />
+          <input
+            name="image"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={(e) => compressInputFile(e.currentTarget)}
+          />
         </div>
-        <button type="submit" className="btn btn-primary w-full">
-          {tr("inv.addBtn")}
-        </button>
+        <SubmitWithProgress
+          label={tr("inv.addBtn")}
+          pendingLabel={tr("inv.uploading")}
+        />
       </form>
 
       {/* --- Facture cards --- */}
@@ -247,9 +263,8 @@ function InvoiceCard({
               <label>{tr("inv.total")}</label>
               <input
                 name="totalAmount"
-                type="number"
-                step="0.01"
-                min={0}
+                type="text"
+                inputMode="decimal"
                 defaultValue={inv.totalAmount || ""}
               />
             </div>
@@ -260,12 +275,20 @@ function InvoiceCard({
           </div>
           <div>
             <label>{tr("inv.photo")}</label>
-            <input name="image" type="file" accept="image/*" capture="environment" />
+            <input
+              name="image"
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={(e) => compressInputFile(e.currentTarget)}
+            />
           </div>
-          <div className="flex gap-3">
-            <button className="btn btn-primary !py-1.5 !text-sm">
-              {tr("common.save")}
-            </button>
+          <div className="flex items-center gap-3">
+            <SubmitWithProgress
+              label={tr("common.save")}
+              pendingLabel={tr("inv.uploading")}
+              className="!py-1.5 !text-sm"
+            />
             <button
               type="button"
               onClick={() => setEditing(false)}

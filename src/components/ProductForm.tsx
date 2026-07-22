@@ -6,6 +6,8 @@ import { createProduct, updateProduct } from "@/app/actions";
 import { computePricing, money } from "@/lib/calc";
 import BarcodeScanner from "@/components/BarcodeScanner";
 import { translator, type Lang } from "@/lib/i18n";
+import { compressInputFile } from "@/lib/compressImage";
+import { SubmitWithProgress } from "@/components/FormPending";
 
 type Category = { id: number; name: string; parentId: number | null };
 type SupplierOpt = { id: number; name: string };
@@ -212,9 +214,10 @@ export default function ProductForm({
   const [marginStr, setMarginStr] = useState(
     base ? String(base.marginPercent) : "20"
   );
-  const purchasePrice = parseFloat(purchasePriceStr) || 0;
-  const packPrice = parseFloat(packPriceStr) || 0;
-  const margin = parseFloat(marginStr) || 0;
+  const dec = (x: string) => parseFloat(x.replace(",", "."));
+  const purchasePrice = dec(purchasePriceStr) || 0;
+  const packPrice = dec(packPriceStr) || 0;
+  const margin = dec(marginStr) || 0;
 
   const [barcode, setBarcode] = useState(base?.barcode ?? "");
   const [preview, setPreview] = useState<string | null>(null);
@@ -238,12 +241,12 @@ export default function ProductForm({
   };
   const changePackPrice = (s: string) => {
     setPackPriceStr(s);
-    const n = parseFloat(s);
+    const n = dec(s);
     setPurchasePriceStr(isNaN(n) ? "" : String(round2(packs * n)));
   };
   const changeTotal = (s: string) => {
     setPurchasePriceStr(s);
-    const n = parseFloat(s);
+    const n = dec(s);
     setPackPriceStr(isNaN(n) || packs <= 0 ? "" : String(round2(n / packs)));
   };
 
@@ -417,24 +420,22 @@ export default function ProductForm({
                 <div>
                   <label>{tr("form.pricePerPack")}</label>
                   <input
-                    type="number"
-                    step="0.01"
-                    min={0}
+                    type="text"
+                    inputMode="decimal"
                     value={packPriceStr}
                     onChange={(e) => changePackPrice(e.target.value)}
-                    placeholder="0.00"
+                    placeholder="0,00"
                   />
                 </div>
                 <div>
                   <label>{tr("form.totalPaid")}</label>
                   <input
                     name="purchasePrice"
-                    type="number"
-                    step="0.01"
-                    min={0}
+                    type="text"
+                    inputMode="decimal"
                     value={purchasePriceStr}
                     onChange={(e) => changeTotal(e.target.value)}
-                    placeholder="0.00"
+                    placeholder="0,00"
                   />
                 </div>
               </div>
@@ -442,8 +443,8 @@ export default function ProductForm({
                 <label>{tr("form.margin")}</label>
                 <input
                   name="marginPercent"
-                  type="number"
-                  step="0.1"
+                  type="text"
+                  inputMode="decimal"
                   value={marginStr}
                   onChange={(e) => setMarginStr(e.target.value)}
                 />
@@ -500,8 +501,9 @@ export default function ProductForm({
                   name="invoice"
                   type="file"
                   accept="image/*"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
+                  onChange={async (e) => {
+                    await compressInputFile(e.currentTarget);
+                    const f = e.currentTarget.files?.[0];
                     setPreview(f ? URL.createObjectURL(f) : null);
                   }}
                 />
@@ -549,9 +551,11 @@ export default function ProductForm({
               <Link href="/products" className="btn btn-ghost">
                 {tr("common.cancel")}
               </Link>
-              <button type="submit" className="btn btn-primary">
-                {tr("common.save")}
-              </button>
+              <SubmitWithProgress
+                label={tr("common.save")}
+                pendingLabel={tr("inv.uploading")}
+                className="!w-auto"
+              />
             </div>
           </div>
         </MacWindow>

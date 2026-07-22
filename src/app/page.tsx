@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getDashboardStats } from "@/lib/queries";
+import { prisma } from "@/lib/db";
 import { money, formatDate } from "@/lib/calc";
 import { PageHeader, StatCard, Badge, EmptyState } from "@/components/ui";
 import { PixelIcon } from "@/components/PixelIcon";
@@ -26,6 +27,21 @@ function expiryLabel(days: number | null) {
 export default async function DashboardPage() {
   const lang = await getLang();
   const stats = await getDashboardStats();
+  const invoicesRaw = await prisma.invoice.findMany({
+    include: { supplier: true, products: { select: { purchasePrice: true } } },
+    orderBy: { date: "desc" },
+  });
+  const openInvoices = invoicesRaw
+    .map((i) => ({
+      id: i.id,
+      number: i.number,
+      supplier: i.supplier.name,
+      total: i.totalAmount,
+      remaining:
+        i.totalAmount - i.products.reduce((s, p) => s + p.purchasePrice, 0),
+    }))
+    .filter((i) => i.total > 0 && i.remaining > 0.01)
+    .slice(0, 5);
   const topProfit = stats.analytics.byProfit.slice(0, 5);
   const maxProfit = topProfit[0]?.profit || 1;
 
@@ -164,6 +180,41 @@ export default async function DashboardPage() {
               )}
             </section>
           </div>
+
+          {/* Open factures — the intelligent reminder */}
+          {openInvoices.length > 0 && (
+            <section className="card card-banana mt-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="flex items-center gap-2 font-semibold text-gray-900">
+                  <PixelIcon name="doc" /> {t(lang, "dash.openInvoices")}
+                </h2>
+                <Link
+                  href="/invoices"
+                  className="text-sm font-medium text-emerald-600 hover:underline"
+                >
+                  {t(lang, "dash.viewAll")}
+                </Link>
+              </div>
+              <ul className="divide-y divide-amber-200/60">
+                {openInvoices.map((i) => (
+                  <li
+                    key={i.id}
+                    className="flex items-center justify-between py-2.5"
+                  >
+                    <div>
+                      <div className="pixel font-medium text-gray-800">
+                        {i.number}
+                      </div>
+                      <div className="text-xs text-gray-500">{i.supplier}</div>
+                    </div>
+                    <Badge tone="amber">
+                      {money(i.remaining)} · {t(lang, "inv.remaining")}
+                    </Badge>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           {/* Best sellers */}
           <section className="card mt-6">

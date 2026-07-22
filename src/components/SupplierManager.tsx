@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { MacAlert } from "@/components/MacDialog";
 import { useLang } from "@/lib/useLang";
 import { translator } from "@/lib/i18n";
@@ -11,6 +12,7 @@ export type SupplierRow = {
   phone: string | null;
   note: string | null;
   productCount: number;
+  invoiceCount: number;
 };
 
 type Action = (formData: FormData) => void;
@@ -64,6 +66,7 @@ export default function SupplierManager({
                 <th className="px-4 py-3">{tr("table.supplier")}</th>
                 <th className="px-4 py-3">{tr("sup.phone")}</th>
                 <th className="px-4 py-3 text-right">{tr("sup.products")}</th>
+                <th className="px-4 py-3 text-right">{tr("nav.invoices")}</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
@@ -96,7 +99,7 @@ function Row({
   if (editing) {
     return (
       <tr className="bg-emerald-50/40">
-        <td colSpan={4} className="px-4 py-3">
+        <td colSpan={5} className="px-4 py-3">
           <form
             action={update}
             onSubmit={() => setEditing(false)}
@@ -142,6 +145,14 @@ function Row({
         )}
       </td>
       <td className="px-4 py-3 text-right text-gray-600">{s.productCount}</td>
+      <td className="px-4 py-3 text-right">
+        <Link
+          href={`/invoices?supplier=${s.id}`}
+          className="font-medium text-emerald-600 hover:underline"
+        >
+          {s.invoiceCount}
+        </Link>
+      </td>
       <td className="px-4 py-3">
         <div className="flex items-center justify-end gap-2 whitespace-nowrap">
           <button

@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 export default async function SuppliersPage() {
   const lang = await getLang();
   const suppliers = await prisma.supplier.findMany({
-    include: { _count: { select: { products: true } } },
+    include: { _count: { select: { products: true, invoices: true } } },
     orderBy: { name: "asc" },
   });
 
@@ -39,6 +39,7 @@ export default async function SuppliersPage() {
           phone: s.phone,
           note: s.note,
           productCount: s._count.products,
+          invoiceCount: s._count.invoices,
         }))}
         create={createSupplier}
         update={updateSupplier}

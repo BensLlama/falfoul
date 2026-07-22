@@ -12,10 +12,17 @@ import InvoiceManager, { InvoiceRow } from "@/components/InvoiceManager";
 
 export const dynamic = "force-dynamic";
 
-export default async function InvoicesPage() {
+export default async function InvoicesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ supplier?: string }>;
+}) {
   const lang = await getLang();
+  const { supplier } = await searchParams;
+  const supplierId = supplier ? parseInt(supplier, 10) : NaN;
   const [invoices, suppliers] = await Promise.all([
     prisma.invoice.findMany({
+      where: isNaN(supplierId) ? undefined : { supplierId },
       include: {
         supplier: true,
         products: { select: { purchasePrice: true } },

@@ -48,8 +48,14 @@ export function StatCard({
     amber: "text-amber-600",
     red: "text-red-600",
   };
+  const bgs: Record<string, string> = {
+    default: "card-lavender",
+    green: "card-mint",
+    amber: "card-banana",
+    red: "card-peach",
+  };
   return (
-    <div className="card">
+    <div className={`card ${bgs[tone]}`}>
       <div className="pixel text-xs font-medium uppercase tracking-wide text-gray-500">
         {label}
       </div>

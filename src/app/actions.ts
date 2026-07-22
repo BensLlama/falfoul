@@ -10,7 +10,8 @@ function str(v: FormDataEntryValue | null): string {
   return typeof v === "string" ? v.trim() : "";
 }
 function num(v: FormDataEntryValue | null): number {
-  const n = parseFloat(str(v));
+  // Accept both "12.50" and "12,50" (French keyboards).
+  const n = parseFloat(str(v).replace(",", "."));
   return isNaN(n) ? 0 : n;
 }
 function int(v: FormDataEntryValue | null): number {
@@ -185,6 +186,13 @@ export async function createInvoice(formData: FormData) {
   const supplierId = int(formData.get("supplierId"));
   const number = str(formData.get("number"));
   if (!supplierId || !number) return;
+
+  // Guard against double-taps: same fournisseur + same number = same
+  // facture, never create it twice.
+  const existing = await prisma.invoice.findFirst({
+    where: { supplierId, number },
+  });
+  if (existing) return;
 
   const imageUrl = await saveUpload(formData.get("image") as File | null);
 

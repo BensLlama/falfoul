@@ -219,6 +219,13 @@ const dict = {
   "form.factureRemaining": ["left to enter on this facture", "à saisir sur cette facture"],
   "form.factureOver": ["This facture is over its total!", "Cette facture dépasse son total !"],
   "form.newFactureLink": ["+ New facture", "+ Nouvelle facture"],
+
+  "inv.uploading": ["Uploading… please wait", "Envoi en cours… patientez"],
+  "inv.saved": ["Facture saved!", "Facture enregistrée !"],
+  "dash.openInvoices": ["Factures to complete", "Factures à compléter"],
+  "dash.allEntered": ["All factures are fully entered.", "Toutes les factures sont entièrement saisies."],
+  "sup.invoices": ["factures", "factures"],
+  "inv.filterAll": ["All suppliers", "Tous les fournisseurs"],
 } as const;
 
 export type TKey = keyof typeof dict;
