@@ -3,6 +3,8 @@ import { getDashboardStats } from "@/lib/queries";
 import { money, formatDate } from "@/lib/calc";
 import { PageHeader, StatCard, Badge, EmptyState } from "@/components/ui";
 import { PixelIcon } from "@/components/PixelIcon";
+import { getLang } from "@/lib/getLang";
+import { t } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +24,7 @@ function expiryLabel(days: number | null) {
 }
 
 export default async function DashboardPage() {
+  const lang = await getLang();
   const stats = await getDashboardStats();
   const topProfit = stats.analytics.byProfit.slice(0, 5);
   const maxProfit = topProfit[0]?.profit || 1;
@@ -34,46 +37,46 @@ export default async function DashboardPage() {
   return (
     <div>
       <PageHeader
-        title="Dashboard"
-        subtitle="A quick look at your store: stock value, expiring items, low stock and best sellers."
+        title={t(lang, "dashboard.title")}
+        subtitle={t(lang, "dashboard.subtitle")}
         action={
           <Link href="/products/new" className="btn btn-primary">
-            + Save product
+            {t(lang, "products.new")}
           </Link>
         }
       />
 
       {!hasData ? (
         <EmptyState
-          title="Welcome to Falfoul"
-          hint="Start by adding a product, then record a purchase from a supplier invoice. The app will compute your cost and selling price per piece automatically."
+          title={t(lang, "dash.welcome")}
+          hint={t(lang, "dash.welcomeHint")}
           href="/products/new"
-          cta="Add your first product"
+          cta={t(lang, "dash.firstProduct")}
         />
       ) : (
         <>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard
-              label="Products"
+              label={t(lang, "nav.products")}
               value={stats.productCount}
-              sub="in your catalog"
+              sub={t(lang, "dash.inCatalog")}
             />
             <StatCard
-              label="Stock value"
+              label={t(lang, "dash.stockValue")}
               value={money(stats.totalStockValue)}
-              sub="cost of remaining stock"
+              sub={t(lang, "dash.stockValueSub")}
               tone="green"
             />
             <StatCard
-              label="Low stock"
+              label={t(lang, "dash.lowStock")}
               value={stats.lowStock.length}
-              sub={`${stats.outOfStock.length} out of stock`}
+              sub={`${stats.outOfStock.length} ${t(lang, "dash.outOfStock")}`}
               tone={stats.lowStock.length ? "amber" : "default"}
             />
             <StatCard
-              label="Expiring ≤ 7 days"
+              label={t(lang, "dash.expiring7")}
               value={stats.expiringSoon.length}
-              sub={`${stats.expiry.length} within a month`}
+              sub={`${stats.expiry.length} ${t(lang, "dash.withinMonth")}`}
               tone={stats.expiringSoon.length ? "red" : "default"}
             />
           </div>
@@ -83,18 +86,18 @@ export default async function DashboardPage() {
             <section className="card">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="flex items-center gap-2 font-semibold text-gray-900">
-                  <PixelIcon name="clock" /> Expiry reminders
+                  <PixelIcon name="clock" /> {t(lang, "dash.expiryReminders")}
                 </h2>
                 <Link
                   href="/alerts"
                   className="text-sm font-medium text-emerald-600 hover:underline"
                 >
-                  View all
+                  {t(lang, "dash.viewAll")}
                 </Link>
               </div>
               {stats.expiry.length === 0 ? (
                 <p className="text-sm text-gray-500">
-                  Nothing expiring in the next 30 days. <PixelIcon name="smile" size={14} className="inline align-[-2px]" />
+                  {t(lang, "dash.nothing30")} <PixelIcon name="smile" size={14} className="inline align-[-2px]" />
                 </p>
               ) : (
                 <ul className="divide-y divide-gray-100">
@@ -124,18 +127,18 @@ export default async function DashboardPage() {
             <section className="card">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="flex items-center gap-2 font-semibold text-gray-900">
-                <PixelIcon name="trend" /> Low stock
+                <PixelIcon name="trend" /> {t(lang, "dash.lowStock")}
               </h2>
                 <Link
                   href="/products"
                   className="text-sm font-medium text-emerald-600 hover:underline"
                 >
-                  Manage
+                  {t(lang, "dash.manage")}
                 </Link>
               </div>
               {stats.lowStock.length === 0 ? (
                 <p className="text-sm text-gray-500">
-                  All products are well stocked. <PixelIcon name="smile" size={14} className="inline align-[-2px]" />
+                  {t(lang, "dash.allStocked")} <PixelIcon name="smile" size={14} className="inline align-[-2px]" />
                 </p>
               ) : (
                 <ul className="divide-y divide-gray-100">
@@ -149,11 +152,11 @@ export default async function DashboardPage() {
                           {p.name}
                         </div>
                         <div className="text-xs text-gray-500">
-                          threshold {p.lowStockThreshold} pcs
+                          {t(lang, "dash.threshold")} {p.lowStockThreshold} pcs
                         </div>
                       </div>
                       <Badge tone={p.isOut ? "red" : "amber"}>
-                        {p.stock} pcs left
+                        {p.stock} {t(lang, "dash.pcsLeft")}
                       </Badge>
                     </li>
                   ))}
@@ -166,18 +169,18 @@ export default async function DashboardPage() {
           <section className="card mt-6">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="flex items-center gap-2 font-semibold text-gray-900">
-                <PixelIcon name="star" /> Top products by profit
+                <PixelIcon name="star" /> {t(lang, "dash.topProfit")}
               </h2>
               <Link
                 href="/analytics"
                 className="text-sm font-medium text-emerald-600 hover:underline"
               >
-                Full analytics
+                {t(lang, "dash.fullAnalytics")}
               </Link>
             </div>
             {topProfit.length === 0 ? (
               <p className="text-sm text-gray-500">
-                No sales recorded yet. Record a sale to see analytics.
+                {t(lang, "dash.noSales")}
               </p>
             ) : (
               <div className="space-y-3">

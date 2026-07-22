@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 import { PixelIcon, PixelIconName } from "@/components/PixelIcon";
+import { useLang } from "@/lib/useLang";
+import { t } from "@/lib/i18n";
 
 /**
  * The classic Macintosh alert dialog — caution icon, message,
@@ -24,6 +26,7 @@ export function MacAlert({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const lang = useLang();
   // Esc cancels, Enter confirms — like a real Mac.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -61,7 +64,7 @@ export function MacAlert({
         </div>
         <div className="flex justify-end gap-5 px-5 pb-5">
           <button type="button" className="btn btn-ghost" onClick={onCancel}>
-            Cancel
+            {t(lang, "common.cancel")}
           </button>
           <button
             type="button"

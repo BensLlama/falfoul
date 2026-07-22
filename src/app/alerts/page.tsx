@@ -3,10 +3,13 @@ import { PixelIcon } from "@/components/PixelIcon";
 import { getExpiryAlerts, getLowStockProducts } from "@/lib/queries";
 import { formatDate } from "@/lib/calc";
 import { PageHeader, Badge } from "@/components/ui";
+import { getLang } from "@/lib/getLang";
+import { t, type Lang } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
 export default async function AlertsPage() {
+  const lang = await getLang();
   const [expiry, lowStock] = await Promise.all([
     getExpiryAlerts(60),
     getLowStockProducts(),
@@ -24,23 +27,23 @@ export default async function AlertsPage() {
   return (
     <div>
       <PageHeader
-        title="Alerts"
-        subtitle="Expiry reminders (1 month · 1 week · 3 days) and low-stock warnings."
+        title={t(lang, "alerts.title")}
+        subtitle={t(lang, "alerts.subtitle")}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="space-y-4">
-          <ExpiryGroup title="🔴 Already expired" tone="red" items={expired} />
+          <ExpiryGroup lang={lang} title={t(lang, "alerts.expired")} tone="red" items={expired} />
           <ExpiryGroup
-            title="🟠 Within 3 days"
+            lang={lang} title={t(lang, "alerts.in3")}
             tone="red"
             items={in3}
           />
-          <ExpiryGroup title="🟡 Within 1 week" tone="amber" items={inWeek} />
-          <ExpiryGroup title="🔵 Within 1 month" tone="blue" items={inMonth} />
+          <ExpiryGroup lang={lang} title={t(lang, "alerts.inWeek")} tone="amber" items={inWeek} />
+          <ExpiryGroup lang={lang} title={t(lang, "alerts.inMonth")} tone="blue" items={inMonth} />
           {expiry.length === 0 && (
             <div className="card text-sm text-gray-500">
-              Nothing expiring in the next 60 days. <PixelIcon name="smile" size={14} className="inline align-[-2px]" />
+              {t(lang, "alerts.nothing60")} <PixelIcon name="smile" size={14} className="inline align-[-2px]" />
             </div>
           )}
         </div>
@@ -48,11 +51,11 @@ export default async function AlertsPage() {
         <div>
           <section className="card">
             <h2 className="mb-4 flex items-center gap-2 font-semibold text-gray-900">
-              <PixelIcon name="trend" /> Low / out of stock
+              <PixelIcon name="trend" /> {t(lang, "alerts.lowOut")}
             </h2>
             {lowStock.length === 0 ? (
               <p className="text-sm text-gray-500">
-                Everything is well stocked. <PixelIcon name="smile" size={14} className="inline align-[-2px]" />
+                {t(lang, "alerts.allStocked")} <PixelIcon name="smile" size={14} className="inline align-[-2px]" />
               </p>
             ) : (
               <ul className="divide-y divide-gray-100">
@@ -64,7 +67,7 @@ export default async function AlertsPage() {
                     <div>
                       <div className="font-medium text-gray-800">{p.name}</div>
                       <div className="text-xs text-gray-500">
-                        {p.category} · alert at {p.lowStockThreshold} pcs
+                        {p.category} · {t(lang, "alerts.alertAt")} {p.lowStockThreshold} pcs
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -75,7 +78,7 @@ export default async function AlertsPage() {
                         href="/products/new"
                         className="text-xs font-medium text-emerald-600 hover:underline"
                       >
-                        Restock
+                        {t(lang, "alerts.restock")}
                       </Link>
                     </div>
                   </li>
@@ -90,10 +93,12 @@ export default async function AlertsPage() {
 }
 
 function ExpiryGroup({
+  lang,
   title,
   tone,
   items,
 }: {
+  lang: Lang;
   title: string;
   tone: "red" | "amber" | "blue";
   items: {
@@ -126,10 +131,10 @@ function ExpiryGroup({
               {e.days === null
                 ? "—"
                 : e.days < 0
-                ? `${-e.days}d ago`
+                ? `${-e.days}${t(lang, "alerts.agoSuffix")}`
                 : e.days === 0
-                ? "today"
-                : `in ${e.days}d`}
+                ? t(lang, "alerts.today")
+                : `${t(lang, "alerts.inPrefix")}${e.days}j`}
             </Badge>
           </li>
         ))}

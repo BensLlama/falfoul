@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui";
 import DeleteForm from "@/components/DeleteForm";
 import { PixelIcon } from "@/components/PixelIcon";
 import BarcodeScanner from "@/components/BarcodeScanner";
+import { useLang } from "@/lib/useLang";
+import { translator } from "@/lib/i18n";
 
 export type ProductRow = {
   id: number;
@@ -37,6 +39,7 @@ export default function ProductTable({
   rows: ProductRow[];
   deleteAction: (formData: FormData) => void;
 }) {
+  const tr = translator(useLang());
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
   const visible = q
@@ -59,7 +62,7 @@ export default function ProductTable({
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search name, variant, barcode, supplier…"
+            placeholder={tr("table.searchPh")}
             className="!pl-9"
           />
         </div>
@@ -70,7 +73,7 @@ export default function ProductTable({
       <div className="space-y-3 md:hidden">
         {visible.length === 0 && (
           <div className="card py-8 text-center text-sm text-gray-500">
-            No products match “{query}”.
+            {tr("table.noMatch")} “{query}”.
           </div>
         )}
         {visible.map((p) => (
@@ -94,9 +97,9 @@ export default function ProductTable({
               <div className="flex shrink-0 items-center gap-1.5">
                 <span className="pixel font-semibold">{p.stock}</span>
                 {p.isOut ? (
-                  <Badge tone="red">Out</Badge>
+                  <Badge tone="red">{tr("common.out")}</Badge>
                 ) : p.isLow ? (
-                  <Badge tone="amber">Low</Badge>
+                  <Badge tone="amber">{tr("common.low")}</Badge>
                 ) : (
                   <span className="text-xs text-gray-400">pcs</span>
                 )}
@@ -104,10 +107,10 @@ export default function ProductTable({
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-700">
               <span>
-                Sell:{" "}
+                {tr("table.sell")}:{" "}
                 <b className="text-emerald-600">{p.sellStr}</b>
               </span>
-              <span>Cost: {p.costStr}</span>
+              <span>{tr("table.cost")}: {p.costStr}</span>
               <span>
                 {p.packs}×{p.unitsPerPack} = {p.bought} pcs
               </span>
@@ -116,25 +119,25 @@ export default function ProductTable({
               {p.expiryStr ? (
                 <Badge tone={p.expiryTone}>{p.expiryStr}</Badge>
               ) : (
-                <span className="text-xs text-gray-300">no expiry</span>
+                <span className="text-xs text-gray-300">{tr("table.noExpiry")}</span>
               )}
               <div className="flex items-center gap-3 text-sm">
                 <Link
                   href={`/products/new?copy=${p.id}`}
                   className="text-blue-600 hover:underline"
                 >
-                  Duplicate
+                  {tr("common.duplicate")}
                 </Link>
                 <Link
                   href={`/products/${p.id}/edit`}
                   className="text-emerald-600 hover:underline"
                 >
-                  Edit
+                  {tr("common.edit")}
                 </Link>
                 <DeleteForm
                   action={deleteAction}
                   id={p.id}
-                  message={`Delete "${p.name}"? Its sales history will be deleted too. This cannot be undone.`}
+                  message={`${tr("common.delete")} "${p.name}"? ${tr("table.deleteMsg2")}`}
                 />
               </div>
             </div>
@@ -147,15 +150,15 @@ export default function ProductTable({
         <table className="w-full min-w-[900px] text-sm">
           <thead>
             <tr className="border-b-2 border-gray-900 text-left text-xs uppercase tracking-wide text-gray-500">
-              <th className="px-4 py-3">Invoice</th>
-              <th className="px-4 py-3">Product</th>
-              <th className="px-4 py-3">Supplier</th>
-              <th className="px-4 py-3 text-right">Bought</th>
-              <th className="px-4 py-3 text-right">Paid</th>
-              <th className="px-4 py-3 text-right">Cost / pc</th>
-              <th className="px-4 py-3 text-right">Sell / pc</th>
-              <th className="px-4 py-3 text-right">Stock</th>
-              <th className="px-4 py-3">Expiry</th>
+              <th className="px-4 py-3">{tr("table.invoice")}</th>
+              <th className="px-4 py-3">{tr("table.product")}</th>
+              <th className="px-4 py-3">{tr("table.supplier")}</th>
+              <th className="px-4 py-3 text-right">{tr("table.bought")}</th>
+              <th className="px-4 py-3 text-right">{tr("table.paid")}</th>
+              <th className="px-4 py-3 text-right">{tr("table.costPc")}</th>
+              <th className="px-4 py-3 text-right">{tr("table.sellPc")}</th>
+              <th className="px-4 py-3 text-right">{tr("table.stock")}</th>
+              <th className="px-4 py-3">{tr("table.expiry")}</th>
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
@@ -166,7 +169,7 @@ export default function ProductTable({
                   colSpan={10}
                   className="px-4 py-10 text-center text-sm text-gray-500"
                 >
-                  No products match “{query}”.
+                  {tr("table.noMatch")} “{query}”.
                 </td>
               </tr>
             )}
@@ -223,9 +226,9 @@ export default function ProductTable({
                   <div className="flex items-center justify-end gap-1.5">
                     <span className="font-semibold">{p.stock}</span>
                     {p.isOut ? (
-                      <Badge tone="red">Out</Badge>
+                      <Badge tone="red">{tr("common.out")}</Badge>
                     ) : p.isLow ? (
-                      <Badge tone="amber">Low</Badge>
+                      <Badge tone="amber">{tr("common.low")}</Badge>
                     ) : null}
                   </div>
                 </td>
@@ -243,18 +246,18 @@ export default function ProductTable({
                       className="text-blue-600 hover:underline"
                       title="Create a new version of this product"
                     >
-                      Duplicate
+                      {tr("common.duplicate")}
                     </Link>
                     <Link
                       href={`/products/${p.id}/edit`}
                       className="text-emerald-600 hover:underline"
                     >
-                      Edit
+                      {tr("common.edit")}
                     </Link>
                     <DeleteForm
                       action={deleteAction}
                       id={p.id}
-                      message={`Delete "${p.name}"? Its sales history will be deleted too. This cannot be undone.`}
+                      message={`${tr("common.delete")} "${p.name}"? ${tr("table.deleteMsg2")}`}
                     />
                   </div>
                 </td>

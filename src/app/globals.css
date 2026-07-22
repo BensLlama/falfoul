@@ -8,6 +8,11 @@
   --ink: #111827;
 }
 
+/* Bigger base size — everything (text, spacing) scales with rem */
+html {
+  font-size: 18px;
+}
+
 /* The classic dithered desktop — with the 90s Mac teal tint */
 html,
 body {

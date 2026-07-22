@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react";
 import { MacAlert } from "@/components/MacDialog";
+import { useLang } from "@/lib/useLang";
+import { t } from "@/lib/i18n";
 
 /**
  * A delete button that asks for confirmation with a classic
@@ -16,6 +18,7 @@ export default function DeleteForm({
   id: number;
   message: string;
 }) {
+  const lang = useLang();
   const ref = useRef<HTMLFormElement>(null);
   const [open, setOpen] = useState(false);
 
@@ -28,13 +31,13 @@ export default function DeleteForm({
           onClick={() => setOpen(true)}
           className="text-red-500 hover:underline"
         >
-          Delete
+          {t(lang, "common.delete")}
         </button>
       </form>
       {open && (
         <MacAlert
           message={message}
-          confirmLabel="Delete"
+          confirmLabel={t(lang, "common.delete")}
           danger
           onCancel={() => setOpen(false)}
           onConfirm={() => {

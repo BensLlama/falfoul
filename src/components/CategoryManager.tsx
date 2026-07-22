@@ -3,6 +3,8 @@
 import { useRef, useState } from "react";
 import { PixelIcon, PixelIconName } from "@/components/PixelIcon";
 import { MacAlert } from "@/components/MacDialog";
+import { useLang } from "@/lib/useLang";
+import { translator } from "@/lib/i18n";
 
 /** Known category emojis rendered as Susan-Kare-style pixel icons. */
 const EMOJI_ICON: Record<string, PixelIconName> = {
@@ -147,6 +149,7 @@ function RenameForm({
   update: Action;
   done: () => void;
 }) {
+  const tr = translator(useLang());
   return (
     <form
       action={update}
@@ -163,13 +166,13 @@ function RenameForm({
         required
         className="!h-8 !w-40 !px-2 !text-xs"
       />
-      <button className="btn btn-primary !px-2 !py-1 !text-xs">Save</button>
+      <button className="btn btn-primary !px-2 !py-1 !text-xs">{tr("common.save")}</button>
       <button
         type="button"
         onClick={done}
         className="btn btn-ghost !px-2 !py-1 !text-xs"
       >
-        Cancel
+        {tr("common.cancel")}
       </button>
     </form>
   );
@@ -191,6 +194,7 @@ function AddInline({
   startOpen?: boolean;
   onDone?: () => void;
 }) {
+  const tr = translator(useLang());
   const [open, setOpen] = useState(startOpen ?? false);
   const close = () => {
     setOpen(false);
@@ -229,13 +233,13 @@ function AddInline({
         placeholder={placeholder ?? "Name…"}
         className="!h-8 !w-40 !px-2 !text-xs"
       />
-      <button className="btn btn-primary !px-2 !py-1 !text-xs">Add</button>
+      <button className="btn btn-primary !px-2 !py-1 !text-xs">{tr("common.add")}</button>
       <button
         type="button"
         onClick={close}
         className="btn btn-ghost !px-2 !py-1 !text-xs"
       >
-        Cancel
+        {tr("common.cancel")}
       </button>
     </form>
   );
@@ -370,6 +374,7 @@ function TopCard({
   actions: Actions;
   q?: string;
 }) {
+  const tr = translator(useLang());
   const { icon, label } = splitEmoji(cat.name);
   const groups = childrenOf(all, cat.id).filter((g) =>
     subtreeMatches(all, g, q)
@@ -416,7 +421,7 @@ function TopCard({
         <AddInline
           parentId={cat.id}
           create={actions.create}
-          label="Add group"
+          label={tr("cat.addGroup")}
           placeholder={`Inside ${label}…`}
         />
       </div>
@@ -437,6 +442,7 @@ export default function CategoryManager({
   update: Action;
   remove: Action;
 }) {
+  const tr = translator(useLang());
   const actions: Actions = { create, update, remove };
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
@@ -455,7 +461,7 @@ export default function CategoryManager({
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search categories…"
+          placeholder={tr("cat.searchPh")}
           className="!pl-9"
         />
       </div>
@@ -470,7 +476,7 @@ export default function CategoryManager({
         <AddInline
           parentId={null}
           create={create}
-          label="New category"
+          label={tr("cat.new")}
           placeholder="e.g. Frozen"
         />
       </div>

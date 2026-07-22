@@ -1,22 +1,25 @@
 import { getAnalytics } from "@/lib/queries";
 import { PixelIcon } from "@/components/PixelIcon";
 import { money } from "@/lib/calc";
+import { getLang } from "@/lib/getLang";
+import { t } from "@/lib/i18n";
 import { PageHeader, StatCard, Bar, EmptyState, Badge } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
 export default async function AnalyticsPage() {
+  const lang = await getLang();
   const { rows, byRevenue, byProfit, byQty, totals } = await getAnalytics();
 
   if (rows.length === 0) {
     return (
       <div>
-        <PageHeader title="Analytics" />
+        <PageHeader title={t(lang, "analytics.title")} />
         <EmptyState
-          title="No sales to analyze yet"
-          hint="Record some sales and this page will show your best and worst products by revenue, profit and quantity."
+          title={t(lang, "ana.noneTitle")}
+          hint={t(lang, "ana.noneHint")}
           href="/sales/new"
-          cta="Record a sale"
+          cta={t(lang, "ana.recordSale")}
         />
       </div>
     );
@@ -30,16 +33,16 @@ export default async function AnalyticsPage() {
   return (
     <div>
       <PageHeader
-        title="Analytics"
-        subtitle="Which products are doing well — and which aren't."
+        title={t(lang, "analytics.title")}
+        subtitle={t(lang, "ana.subtitle")}
       />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Revenue" value={money(totals.revenue)} tone="green" />
-        <StatCard label="Profit" value={money(totals.profit)} tone="green" />
-        <StatCard label="Pieces sold" value={totals.qty} />
+        <StatCard label={t(lang, "ana.revenue")} value={money(totals.revenue)} tone="green" />
+        <StatCard label={t(lang, "ana.profit")} value={money(totals.profit)} tone="green" />
+        <StatCard label={t(lang, "ana.piecesSold")} value={totals.qty} />
         <StatCard
-          label="Avg margin"
+          label={t(lang, "ana.avgMargin")}
           value={`${
             totals.revenue > 0
               ? ((totals.profit / totals.revenue) * 100).toFixed(1)
@@ -51,31 +54,31 @@ export default async function AnalyticsPage() {
       <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="card">
           <div className="text-xs uppercase tracking-wide text-gray-500">
-            <span className="inline-flex items-center gap-2"><PixelIcon name="star" /> Best product (by profit)</span>
+            <span className="inline-flex items-center gap-2"><PixelIcon name="star" /> {t(lang, "ana.best")}</span>
           </div>
           <div className="mt-1 text-xl font-bold text-gray-900">
             {best.name}
           </div>
           <div className="mt-1 text-sm text-emerald-600">
-            {money(best.profit)} profit · {best.qty} sold
+            {money(best.profit)} {t(lang, "ana.profitWord")} · {best.qty} {t(lang, "ana.soldWord")}
           </div>
         </div>
         <div className="card">
           <div className="text-xs uppercase tracking-wide text-gray-500">
-            🐌 Weakest product (by profit)
+            {t(lang, "ana.worst")}
           </div>
           <div className="mt-1 text-xl font-bold text-gray-900">
             {worst.name}
           </div>
           <div className="mt-1 text-sm text-gray-500">
-            {money(worst.profit)} profit · {worst.qty} sold
+            {money(worst.profit)} {t(lang, "ana.profitWord")} · {worst.qty} {t(lang, "ana.soldWord")}
           </div>
         </div>
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <RankSection
-          title="By revenue"
+          title={t(lang, "ana.byRevenue")}
           rows={byRevenue.slice(0, 8).map((r) => ({
             id: r.id,
             name: r.name,
@@ -86,7 +89,7 @@ export default async function AnalyticsPage() {
           tone="blue"
         />
         <RankSection
-          title="By quantity sold"
+          title={t(lang, "ana.byQty")}
           rows={byQty.slice(0, 8).map((r) => ({
             id: r.id,
             name: r.name,
@@ -102,12 +105,12 @@ export default async function AnalyticsPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-100 text-left text-xs uppercase tracking-wide text-gray-500">
-              <th className="px-4 py-3">Product</th>
-              <th className="px-4 py-3">Category</th>
-              <th className="px-4 py-3 text-right">Sold</th>
-              <th className="px-4 py-3 text-right">Revenue</th>
-              <th className="px-4 py-3 text-right">Profit</th>
-              <th className="px-4 py-3 text-right">Margin</th>
+              <th className="px-4 py-3">{t(lang, "ana.product")}</th>
+              <th className="px-4 py-3">{t(lang, "ana.category")}</th>
+              <th className="px-4 py-3 text-right">{t(lang, "ana.sold")}</th>
+              <th className="px-4 py-3 text-right">{t(lang, "ana.revenue")}</th>
+              <th className="px-4 py-3 text-right">{t(lang, "ana.profit")}</th>
+              <th className="px-4 py-3 text-right">{t(lang, "ana.margin")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">

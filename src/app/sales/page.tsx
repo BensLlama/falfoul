@@ -4,11 +4,14 @@ import { prisma } from "@/lib/db";
 import { money, formatDate } from "@/lib/calc";
 import { deleteSale } from "@/app/actions";
 import { PageHeader, EmptyState } from "@/components/ui";
+import { getLang } from "@/lib/getLang";
+import { t } from "@/lib/i18n";
 import DeleteForm from "@/components/DeleteForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function SalesPage() {
+  const lang = await getLang();
   const sales = await prisma.sale.findMany({
     include: { product: true },
     orderBy: { saleDate: "desc" },
@@ -20,10 +23,10 @@ export default async function SalesPage() {
   return (
     <div>
       <PageHeader
-        title="Sales"
-        subtitle={`${sales.length} recorded · ${money(
+        title={t(lang, "sales.title")}
+        subtitle={`${sales.length} ${t(lang, "sales.recorded")} · ${money(
           totalRevenue
-        )} revenue (last 200)`}
+        )} ${t(lang, "sales.revenueLast")}`}
         action={
           <div className="flex flex-wrap gap-2">
             {sales.length > 0 && (
@@ -32,7 +35,7 @@ export default async function SalesPage() {
               </a>
             )}
             <Link href="/sales/new" className="btn btn-primary">
-              + Record sale
+              {t(lang, "sales.new")}
             </Link>
           </div>
         }
@@ -40,21 +43,21 @@ export default async function SalesPage() {
 
       {sales.length === 0 ? (
         <EmptyState
-          title="No sales yet"
-          hint="Record a sale to keep stock accurate and see which products sell best."
+          title={t(lang, "sales.noneTitle")}
+          hint={t(lang, "sales.noneHint")}
           href="/sales/new"
-          cta="Record sale"
+          cta={t(lang, "ana.recordSale")}
         />
       ) : (
         <div className="card overflow-x-auto p-0">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 text-left text-xs uppercase tracking-wide text-gray-500">
-                <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3">Product</th>
-                <th className="px-4 py-3 text-right">Qty</th>
-                <th className="px-4 py-3 text-right">Unit price</th>
-                <th className="px-4 py-3 text-right">Total</th>
+                <th className="px-4 py-3">{t(lang, "sales.date")}</th>
+                <th className="px-4 py-3">{t(lang, "table.product")}</th>
+                <th className="px-4 py-3 text-right">{t(lang, "sales.qty")}</th>
+                <th className="px-4 py-3 text-right">{t(lang, "sales.unitPrice")}</th>
+                <th className="px-4 py-3 text-right">{t(lang, "sales.total")}</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
@@ -78,7 +81,7 @@ export default async function SalesPage() {
                     <DeleteForm
                       action={deleteSale}
                       id={s.id}
-                      message={`Delete this sale of ${s.quantity} × ${s.product.name}? The pieces will be returned to stock.`}
+                      message={`${t(lang, "common.delete")} ${s.quantity} × ${s.product.name}? ${t(lang, "sales.deleteMsg")}`}
                     />
                   </td>
                 </tr>
